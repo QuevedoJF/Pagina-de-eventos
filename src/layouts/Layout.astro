@@ -1,0 +1,52 @@
+---
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="description"
+      content="LuxeEvents - Estilismo y coordinación de eventos de lujo"
+    />
+    <meta name="viewport" content="width=device-width" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
+
+<style is:global>
+  :root {
+    --bg-crema: #f8f6e9;
+    --color-vino: #7a0016;
+    --color-verde: #4a635d;
+    --texto-oscuro: #333333;
+    --texto-gris: #666666;
+  }
+
+  html {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg-crema);
+    color: var(--texto-oscuro);
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  h1,
+  h2,
+  h3,
+  .serif {
+    font-family: "Georgia", serif;
+    font-weight: normal;
+  }
+</style>
