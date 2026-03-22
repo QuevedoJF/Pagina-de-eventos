@@ -9,11 +9,11 @@ const proyectoId = Number(id);
 
 // 2. Buscamos toda la información de ese proyecto usando el proyectoId
 const projectData = await sql`
-  SELECT p.*, c.nombre as categoria_nombre
-  FROM proyectos p
-  LEFT JOIN categorias c ON p.categoria_id = c.id
-  WHERE p.id = ${proyectoId}
-`;
+    SELECT p.*, c.nombre as categoria_nombre
+    FROM proyectos p
+    LEFT JOIN categorias c ON p.categoria_id = c.id
+    WHERE p.id = ${proyectoId}
+  `;
 
 // Si alguien escribe un ID que no existe, lo regresamos al inicio
 if (projectData.length === 0) {
@@ -24,11 +24,11 @@ const proyecto = projectData[0];
 
 // 3. Traemos TODAS las imágenes de este proyecto usando el proyectoId
 const imagenes = await sql`
-  SELECT ruta_imagen, es_portada
-  FROM proyecto_imagenes
-  WHERE proyecto_id = ${proyectoId}
-  ORDER BY orden ASC
-`;
+    SELECT ruta_imagen, es_portada
+    FROM proyecto_imagenes
+    WHERE proyecto_id = ${proyectoId}
+    ORDER BY orden ASC
+  `;
 
 const portada =
   imagenes.find((img) => img.es_portada)?.ruta_imagen ||

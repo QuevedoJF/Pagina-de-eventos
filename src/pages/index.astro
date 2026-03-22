@@ -9,7 +9,7 @@ const iden = identidadReq[0] || { cronica: "", mision: "", vision: "" };
 const servicios = await sql`
   SELECT * FROM servicios 
   WHERE estado = 'Activo' 
-  ORDER BY id ASC 
+  ORDER BY id DESC 
   LIMIT 3
 `;
 
@@ -94,7 +94,7 @@ function normalizarUrl(url: string): string {
           <a href="#contacto" class="btn-primary">
             <span>Reservar Cita</span>
           </a>
-          <a href="/proyectos" class="btn-ghost"> Ver Portafolio → </a>
+          <a href="/proyectos" class="btn-ghost">Ver Portafolio →</a>
         </div>
       </div>
 
@@ -162,7 +162,8 @@ function normalizarUrl(url: string): string {
           </p>
           <h2 class="section-title">
             Experiencias <em style="font-style: italic; color: var(--wine);"
-              >Curadas</em>
+              >Curadas</em
+            >
           </h2>
           <p class="section-sub">
             Bodas de autor y eventos corporativos de alto nivel
@@ -171,7 +172,7 @@ function normalizarUrl(url: string): string {
 
         <div class="grid-3">
           {
-            servicios.map((s, i) => (
+            servicios.map((s: any, i: number) => (
               <div class={`card-service reveal reveal-delay-${i + 1}`}>
                 <span class="card-number">0{i + 1}</span>
                 <img src={s.ruta_imagen || "/placeholder.jpg"} alt={s.titulo} />
@@ -184,6 +185,11 @@ function normalizarUrl(url: string): string {
             ))
           }
         </div>
+
+        <!-- ✅ BOTÓN VER TODOS LOS SERVICIOS -->
+        <div style="text-align: center; margin-top: 60px;" class="reveal">
+          <a href="/servicios" class="ver-todo">Ver todos los servicios →</a>
+        </div>
       </div>
     </section>
 
@@ -195,7 +201,8 @@ function normalizarUrl(url: string): string {
             <p class="section-label reveal">Visual Storytelling</p>
             <h2 class="section-title reveal reveal-delay-1">
               El Archivo <em style="font-style: italic; color: var(--wine);"
-                >Visual.</em>
+                >Visual.</em
+              >
             </h2>
             <p
               class="section-sub reveal reveal-delay-2"
@@ -211,7 +218,7 @@ function normalizarUrl(url: string): string {
 
         <div class="grid-3">
           {
-            proyectos.map((p, i) => (
+            proyectos.map((p: any, i: number) => (
               <a
                 href={`/proyecto/${p.id}`}
                 class={`project-item reveal reveal-delay-${i + 1}`}
@@ -295,43 +302,22 @@ function normalizarUrl(url: string): string {
     <Footer />
 
     <script>
-      // Navbar scroll effect
       const navbar = document.getElementById("navbar");
       window.addEventListener("scroll", () => {
         navbar?.classList.toggle("scrolled", window.scrollY > 40);
       });
 
-      // Reveal on scroll
       const observer = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              entry.target.classList.add("active");
-            }
+            if (entry.isIntersecting) entry.target.classList.add("active");
           });
         },
         { threshold: 0.1, rootMargin: "0px 0px -40px 0px" },
       );
-
       document
         .querySelectorAll(".reveal")
         .forEach((el) => observer.observe(el));
-
-      // Smooth counter animation for stats
-      const counters = document.querySelectorAll(".stat-number");
-      const counterObserver = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              entry.target.classList.add("counted");
-              counterObserver.unobserve(entry.target);
-            }
-          });
-        },
-        { threshold: 1 },
-      );
-
-      counters.forEach((c) => counterObserver.observe(c));
     </script>
   </body>
 </html>

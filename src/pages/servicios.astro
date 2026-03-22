@@ -1,0 +1,114 @@
+---
+import sql from "../lib/db.js";
+import "../styles/index.css";
+import Footer from "./Footer.astro";
+
+const servicios = await sql`
+  SELECT * FROM servicios 
+  WHERE estado = 'Activo' 
+  ORDER BY id ASC
+`;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Servicios | Vino & Arena</title>
+    <meta
+      name="description"
+      content="Todos nuestros servicios de diseño y curaduría de eventos de lujo."
+    />
+  </head>
+  <body>
+    <!-- ── NAVBAR ─────────────────────────────── -->
+    <nav class="navbar" id="navbar">
+      <a href="/" class="logo">Vino &amp; Arena</a>
+      <ul class="nav-links">
+        <li><a href="/">Inicio</a></li>
+        <li><a href="/#firma">La Firma</a></li>
+        <li><a href="/#archivo">Archivo</a></li>
+      </ul>
+      <a href="/#contacto" class="nav-cta">Contacto</a>
+    </nav>
+
+    <!-- ── HEADER ─────────────────────────────── -->
+    <header class="gallery-header container">
+      <p class="section-label reveal">Diseño y Producción de Élite</p>
+      <h1 class="gallery-title reveal reveal-delay-1">
+        Nuestros<br /><em>Servicios.</em>
+      </h1>
+      <p
+        class="section-sub reveal reveal-delay-2"
+        style="text-align: left; margin-top: 20px; font-size: 0.78rem;"
+      >
+        {servicios.length} servicio{servicios.length !== 1 ? "s" : ""} disponibles
+      </p>
+    </header>
+
+    <!-- ── GRID DE SERVICIOS ─────────────────── -->
+    <main class="container" style="padding-bottom: 120px;">
+      <div class="grid-3">
+        {
+          servicios.map((s: any, i: number) => (
+            <div class={`card-service reveal reveal-delay-${(i % 3) + 1}`}>
+              <span class="card-number">0{i + 1}</span>
+              <img src={s.ruta_imagen || "/placeholder.jpg"} alt={s.titulo} />
+              <div class="card-overlay">
+                <h3>{s.titulo}</h3>
+                <p>{s.descripcion.substring(0, 110)}...</p>
+                <div class="card-price">Desde ${s.precio_inicial} USD</div>
+              </div>
+            </div>
+          ))
+        }
+      </div>
+    </main>
+
+    <!-- ── CTA ────────────────────────────────── -->
+    <section
+      style="background: var(--cream-deep); padding: 100px 0; text-align: center;"
+    >
+      <div class="container">
+        <p class="section-label reveal" style="justify-content: center;">
+          ¿Listo para comenzar?
+        </p>
+        <h2 class="section-title reveal reveal-delay-1">
+          Hablemos de su <em style="color: var(--wine); font-style: italic;"
+            >Próximo Evento.</em
+          >
+        </h2>
+        <div style="margin-top: 40px;" class="reveal reveal-delay-2">
+          <a
+            href="/#contacto"
+            class="btn-primary"
+            style="display: inline-flex;"
+          >
+            <span>Reservar Cita</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <Footer />
+
+    <script>
+      const navbar = document.getElementById("navbar");
+      window.addEventListener("scroll", () => {
+        navbar?.classList.toggle("scrolled", window.scrollY > 40);
+      });
+
+      const observer = new IntersectionObserver(
+        (entries) =>
+          entries.forEach(
+            (e) => e.isIntersecting && e.target.classList.add("active"),
+          ),
+        { threshold: 0.08, rootMargin: "0px 0px -30px 0px" },
+      );
+      document
+        .querySelectorAll(".reveal")
+        .forEach((el) => observer.observe(el));
+    </script>
+  </body>
+</html>

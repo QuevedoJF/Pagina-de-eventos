@@ -2,7 +2,6 @@
 import sql from "../lib/db.js";
 import "../styles/admin.css";
 
-// 1. LÓGICA DE GUARDAR Y ELIMINAR
 if (Astro.request.method === "POST") {
   try {
     const data = await Astro.request.formData();
@@ -10,6 +9,7 @@ if (Astro.request.method === "POST") {
 
     if (action === "delete") {
       const id = Number(data.get("proyecto_id"));
+      await sql`DELETE FROM proyecto_imagenes WHERE proyecto_id = ${id}`;
       await sql`DELETE FROM proyectos WHERE id = ${id}`;
     } else if (action === "create") {
       const titulo = String(data.get("titulo") || "");
@@ -17,8 +17,7 @@ if (Astro.request.method === "POST") {
       const descripcion = String(data.get("descripcion") || "");
       const imagenesBase64 = String(data.get("imagenes_base64") || "[]");
 
-      const catRecord =
-        await sql`SELECT id FROM categorias WHERE nombre = ${categoria} LIMIT 1`;
+      const catRecord = await sql`SELECT id FROM categorias WHERE nombre = ${categoria} LIMIT 1`;
       const categoria_id = catRecord.length > 0 ? catRecord[0].id : null;
 
       const nuevoProyecto = await sql`
@@ -30,23 +29,19 @@ if (Astro.request.method === "POST") {
 
       const imagenes = JSON.parse(imagenesBase64);
       for (let i = 0; i < imagenes.length; i++) {
-        const esPortada = i === 0;
         await sql`
           INSERT INTO proyecto_imagenes (proyecto_id, ruta_imagen, es_portada, orden)
-          VALUES (${proyecto_id}, ${imagenes[i]}, ${esPortada}, ${i})
+          VALUES (${proyecto_id}, ${imagenes[i]}, ${i === 0}, ${i})
         `;
       }
     }
 
-    // ⭐ ESTA ES LA LÍNEA MÁGICA QUE SOLUCIONA EL ERROR ⭐
-    // Obliga al navegador a "limpiar" la memoria recargando la página desde cero
     return Astro.redirect("/admin");
   } catch (error) {
     console.error("Error en la base de datos:", error);
   }
 }
 
-// 2. LECTURA DE DATOS PARA EL PANEL
 const proyectos = await sql`
   SELECT p.id, p.titulo, p.descripcion, c.nombre as categoria_nombre, i.ruta_imagen
   FROM proyectos p
@@ -74,8 +69,8 @@ const proyectos = await sql`
           <a href="/admin-nosotros">Sobre Nosotros</a>
           <a href="/admin-servicios">Servicios</a>
           <a href="/admin-corporativo">Corporativo</a>
-          <a href="/admin-legado">Contactanos</a>
-          <a href="/admin-cta">cuentanos tu vision</a>
+          <a href="/admin-legado">Sección Legado</a>
+          <a href="/admin-cta">Sección Contacto</a>
         </nav>
         <div class="sidebar-action">
           <button class="btn-nuevo" id="openModal">+ AÑADIR NUEVO</button>
@@ -85,68 +80,63 @@ const proyectos = await sql`
       <main class="main-content">
         <header class="content-header">
           <h2>
-            Inventario de Proyectos <span class="count"
-              >{proyectos.length} Eventos</span
-            >
+            Inventario de Proyectos
+            <span class="count">{proyectos.length} Eventos</span>
           </h2>
         </header>
 
         <div class="projects-grid">
-          {
-            proyectos.map((p) => (
-              <div class="project-card">
-                <div
-                  class="project-img"
-                  style={`background-image: url(${p.ruta_imagen || "https://via.placeholder.com/600"});`}
-                />
-                <div class="project-info">
-                  <span class="tag">
-                    {p.categoria_nombre || "Sin Categoría"}
-                  </span>
-                  <h3>{p.titulo}</h3>
-                  <p>{p.descripcion.substring(0, 60)}...</p>
-                  <div
-                    class="card-actions"
-                    style="display: flex; gap: 10px; margin-top: 15px;"
-                  >
-                    <button
-                      class="btn-edit"
-                      style="flex: 1; padding: 8px; border: 1px solid #7A0016; color: #7A0016; background: transparent; cursor: pointer; border-radius: 4px;"
-                    >
-                      Editar
-                    </button>
+          {proyectos.map((p) => (
+            <div class="project-card">
+              <div
+                class="project-img"
+                style={`background-image: url(${p.ruta_imagen || "https://via.placeholder.com/600"});`}
+              />
+              <div class="project-info">
+                <span class="tag">{p.categoria_nombre || "Sin Categoría"}</span>
+                <h3>{p.titulo}</h3>
+                <p>{(p.descripcion || "").substring(0, 60)}...</p>
+                <div class="card-actions" style="display: flex; gap: 10px; margin-top: 15px;">
 
-                    <form
-                      method="POST"
-                      onsubmit="return confirm('¿Seguro que deseas eliminar este evento permanentemente?');"
-                      style="flex: 1; margin: 0;"
+                  <!-- ✅ BOTÓN EDITAR — ahora sí navega -->
+                  <a
+                    href={`/admin/editar/${p.id}`}
+                    class="btn-edit"
+                    style="flex: 1; padding: 8px; border: 1px solid #7A0016; color: #7A0016; background: transparent; cursor: pointer; border-radius: 4px; text-align: center; text-decoration: none; font-size: 0.9rem;"
+                  >
+                    Editar
+                  </a>
+
+                  <form
+                    method="POST"
+                    onsubmit="return confirm('¿Seguro que deseas eliminar este evento permanentemente?');"
+                    style="flex: 1; margin: 0;"
+                  >
+                    <input type="hidden" name="action" value="delete" />
+                    <input type="hidden" name="proyecto_id" value={p.id} />
+                    <button
+                      type="submit"
+                      class="btn-delete"
+                      style="width: 100%; padding: 8px; border: 1px solid #ccc; background: transparent; cursor: pointer; border-radius: 4px; color: #333;"
                     >
-                      <input type="hidden" name="action" value="delete" />
-                      <input type="hidden" name="proyecto_id" value={p.id} />
-                      <button
-                        type="submit"
-                        class="btn-delete"
-                        style="width: 100%; padding: 8px; border: 1px solid #ccc; background: transparent; cursor: pointer; border-radius: 4px; color: #333;"
-                      >
-                        Eliminar
-                      </button>
-                    </form>
-                  </div>
+                      Eliminar
+                    </button>
+                  </form>
+
                 </div>
               </div>
-            ))
-          }
+            </div>
+          ))}
         </div>
       </main>
     </div>
 
+    <!-- MODAL NUEVO PROYECTO -->
     <div id="modal-proyecto" class="modal-overlay">
       <div class="modal-content">
         <div class="modal-header">
-          <h3>Detalles del Proyecto</h3>
-          <button type="button" class="btn-close" id="closeModal"
-            >&times;</button
-          >
+          <h3>Nuevo Proyecto</h3>
+          <button type="button" class="btn-close" id="closeModal">&times;</button>
         </div>
 
         <form method="POST" class="admin-form" id="projectForm">
@@ -154,12 +144,7 @@ const proyectos = await sql`
 
           <div class="form-group">
             <label>Título del Proyecto</label>
-            <input
-              type="text"
-              name="titulo"
-              required
-              placeholder="Ej: Gala Esmeralda 2024"
-            />
+            <input type="text" name="titulo" required placeholder="Ej: Gala Esmeralda 2024" />
           </div>
           <div class="form-group">
             <label>Categoría</label>
@@ -173,14 +158,10 @@ const proyectos = await sql`
           </div>
           <div class="form-group">
             <label>Descripción del Evento</label>
-            <textarea
-              name="descripcion"
-              rows="4"
-              required
-              placeholder="Describe la atmósfera..."></textarea>
+            <textarea name="descripcion" rows="4" required placeholder="Describe la atmósfera..."></textarea>
           </div>
           <div class="form-group">
-            <label>Galería de Fotos (La primera será portada)</label>
+            <label>Fotos (la primera será portada)</label>
             <div class="file-upload">
               <span>Haz clic para seleccionar fotos</span>
               <input type="file" id="projImages" multiple accept="image/*" />
@@ -188,12 +169,7 @@ const proyectos = await sql`
             <div class="gallery-preview" id="galleryPreview"></div>
           </div>
 
-          <input
-            type="hidden"
-            name="imagenes_base64"
-            id="imagenes_base64"
-            value="[]"
-          />
+          <input type="hidden" name="imagenes_base64" id="imagenes_base64" value="[]" />
 
           <div class="form-actions">
             <button type="submit" class="btn-save">Guardar Proyecto</button>
@@ -203,61 +179,39 @@ const proyectos = await sql`
     </div>
 
     <script>
-      // Le decimos a TypeScript exactamente qué tipo de elemento es cada uno
-      const modal = document.getElementById("modal-proyecto") as HTMLElement;
-      const openBtn = document.getElementById("openModal") as HTMLButtonElement;
-      const closeBtn = document.getElementById(
-        "closeModal",
-      ) as HTMLButtonElement;
-      const imageInput = document.getElementById(
-        "projImages",
-      ) as HTMLInputElement;
-      const previewContainer = document.getElementById(
-        "galleryPreview",
-      ) as HTMLElement;
-      const hiddenImagesInput = document.getElementById(
-        "imagenes_base64",
-      ) as HTMLInputElement;
+      const modal     = document.getElementById("modal-proyecto") as HTMLElement;
+      const openBtn   = document.getElementById("openModal") as HTMLButtonElement;
+      const closeBtn  = document.getElementById("closeModal") as HTMLButtonElement;
+      const imageInput = document.getElementById("projImages") as HTMLInputElement;
+      const previewContainer = document.getElementById("galleryPreview") as HTMLElement;
+      const hiddenImagesInput = document.getElementById("imagenes_base64") as HTMLInputElement;
 
       let selectedImages: string[] = [];
 
-      openBtn?.addEventListener("click", () => {
-        modal.style.display = "flex";
-      });
-      closeBtn?.addEventListener("click", () => {
-        modal.style.display = "none";
-      });
+      openBtn?.addEventListener("click", () => { modal.style.display = "flex"; });
+      closeBtn?.addEventListener("click", () => { modal.style.display = "none"; });
 
       imageInput?.addEventListener("change", (e: Event) => {
-        if (previewContainer) previewContainer.innerHTML = "";
+        previewContainer.innerHTML = "";
         selectedImages = [];
+        const files = (e.target as HTMLInputElement).files;
+        if (!files) return;
 
-        const target = e.target as HTMLInputElement;
-        const files = target.files;
-
-        if (files) {
-          Array.from(files).forEach((file: File) => {
-            const reader = new FileReader();
-            reader.onload = (event: ProgressEvent<FileReader>) => {
-              const result = event.target?.result as string;
-
-              if (result) {
-                selectedImages.push(result);
-                if (hiddenImagesInput)
-                  hiddenImagesInput.value = JSON.stringify(selectedImages);
-
-                if (previewContainer) {
-                  const img = document.createElement("div");
-                  img.className = "preview-item";
-                  img.style.backgroundImage = `url(${result})`;
-                  img.style.backgroundSize = "cover";
-                  previewContainer.appendChild(img);
-                }
-              }
-            };
-            reader.readAsDataURL(file);
-          });
-        }
+        Array.from(files).forEach((file: File) => {
+          const reader = new FileReader();
+          reader.onload = (event: ProgressEvent<FileReader>) => {
+            const result = event.target?.result as string;
+            if (!result) return;
+            selectedImages.push(result);
+            hiddenImagesInput.value = JSON.stringify(selectedImages);
+            const div = document.createElement("div");
+            div.className = "preview-item";
+            div.style.backgroundImage = `url(${result})`;
+            div.style.backgroundSize = "cover";
+            previewContainer.appendChild(div);
+          };
+          reader.readAsDataURL(file);
+        });
       });
     </script>
   </body>
