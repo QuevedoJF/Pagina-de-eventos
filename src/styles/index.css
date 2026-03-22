@@ -204,21 +204,6 @@ a {
   position: relative;
 }
 
-.hero::before {
-  content: "V&A";
-  position: absolute;
-  right: -20px;
-  bottom: 60px;
-  font-family: var(--font-display);
-  font-size: clamp(120px, 18vw, 260px);
-  font-weight: 300;
-  color: rgba(107, 21, 40, 0.04);
-  letter-spacing: -10px;
-  pointer-events: none;
-  user-select: none;
-  line-height: 1;
-}
-
 .hero-eyebrow {
   display: flex;
   align-items: center;

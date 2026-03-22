@@ -6,6 +6,38 @@ import Footer from "./Footer.astro";
 const identidadReq = await sql`SELECT * FROM identidad_marca LIMIT 1`;
 const iden = identidadReq[0] || { cronica: "", mision: "", vision: "" };
 
+// Hero
+await sql`
+  CREATE TABLE IF NOT EXISTS seccion_hero (
+    id SERIAL PRIMARY KEY,
+    logo TEXT DEFAULT 'Vino & Arena',
+    eyebrow TEXT DEFAULT 'Curaduría de Atmósferas',
+    titulo_normal TEXT DEFAULT 'Creando',
+    titulo_italico TEXT DEFAULT 'Atmósferas',
+    titulo_normal2 TEXT DEFAULT 'que Inspiran el Alma.',
+    descripcion TEXT DEFAULT 'Diseñamos entornos de lujo donde la estética impecable se encuentra con la emoción genuina. Cada espacio cuenta una historia única.',
+    contador TEXT DEFAULT '2019 — Présente',
+    imagen_principal TEXT DEFAULT 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=2098',
+    imagen_acento TEXT DEFAULT 'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?q=80&w=1469'
+  )
+`;
+await sql`INSERT INTO seccion_hero (id) VALUES (1) ON CONFLICT (id) DO NOTHING`;
+const heroReq = await sql`SELECT * FROM seccion_hero WHERE id = 1`;
+const hero = heroReq[0] || {
+  logo: "Vino & Arena",
+  eyebrow: "Curaduría de Atmósferas",
+  titulo_normal: "Creando",
+  titulo_italico: "Atmósferas",
+  titulo_normal2: "que Inspiran el Alma.",
+  descripcion:
+    "Diseñamos entornos de lujo donde la estética impecable se encuentra con la emoción genuina. Cada espacio cuenta una historia única.",
+  contador: "2019 — Présente",
+  imagen_principal:
+    "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=2098",
+  imagen_acento:
+    "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?q=80&w=1469",
+};
+
 const servicios = await sql`
   SELECT * FROM servicios 
   WHERE estado = 'Activo' 
@@ -67,7 +99,7 @@ function normalizarUrl(url: string): string {
   <body>
     <!-- ── NAVBAR ─────────────────────────────── -->
     <nav class="navbar" id="navbar">
-      <a href="/" class="logo">Vino &amp; Arena</a>
+      <a href="/" class="logo">{hero.logo || "Vino & Arena"}</a>
       <ul class="nav-links">
         <li><a href="#firma">La Firma</a></li>
         <li><a href="#experiencias">Experiencias</a></li>
@@ -81,14 +113,16 @@ function normalizarUrl(url: string): string {
     <header class="hero container">
       <div class="hero-content">
         <div class="hero-eyebrow reveal">
-          <span>Curaduría de Atmósferas</span>
+          <span>{hero.eyebrow}</span>
         </div>
         <h1 class="hero-title reveal reveal-delay-1">
-          Creando <em>Atmósferas</em><br />que Inspiran el Alma.
+          {hero.titulo_normal || "Creando"}
+          <em>{hero.titulo_italico || "Atmósferas"}</em><br />{
+            hero.titulo_normal2 || "que Inspiran el Alma."
+          }
         </h1>
         <p class="hero-subtitle reveal reveal-delay-2">
-          Diseñamos entornos de lujo donde la estética impecable se encuentra
-          con la emoción genuina. Cada espacio cuenta una historia única.
+          {hero.descripcion}
         </p>
         <div class="hero-actions reveal reveal-delay-3">
           <a href="#contacto" class="btn-primary">
@@ -100,18 +134,12 @@ function normalizarUrl(url: string): string {
 
       <div class="hero-visual reveal reveal-delay-2">
         <div class="hero-img-main">
-          <img
-            src="https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=2098"
-            alt="Evento de lujo"
-          />
+          <img src={hero.imagen_principal} alt="Evento de lujo" />
         </div>
         <div class="hero-img-accent">
-          <img
-            src="https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?q=80&w=1469"
-            alt="Detalles del evento"
-          />
+          <img src={hero.imagen_acento} alt="Detalles del evento" />
         </div>
-        <span class="hero-counter">2019 — Présente</span>
+        <span class="hero-counter">{hero.contador}</span>
       </div>
 
       <div class="scroll-indicator">

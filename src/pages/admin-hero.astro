@@ -1,0 +1,359 @@
+---
+import sql from "../lib/db.js";
+import "../styles/admin.css";
+
+let saveError = "";
+
+// Asegurar tabla y fila
+await sql`
+  CREATE TABLE IF NOT EXISTS seccion_hero (
+    id SERIAL PRIMARY KEY,
+    logo TEXT DEFAULT 'Vino & Arena',
+    eyebrow TEXT DEFAULT 'Curaduría de Atmósferas',
+    titulo_normal TEXT DEFAULT 'Creando',
+    titulo_italico TEXT DEFAULT 'Atmósferas',
+    titulo_normal2 TEXT DEFAULT 'que Inspiran el Alma.',
+    descripcion TEXT DEFAULT 'Diseñamos entornos de lujo donde la estética impecable se encuentra con la emoción genuina. Cada espacio cuenta una historia única.',
+    contador TEXT DEFAULT '2019 — Présente',
+    imagen_principal TEXT DEFAULT 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=2098',
+    imagen_acento TEXT DEFAULT 'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?q=80&w=1469'
+  )
+`;
+await sql`INSERT INTO seccion_hero (id) VALUES (1) ON CONFLICT (id) DO NOTHING`;
+
+// Asegurar columnas nuevas existen
+await sql`ALTER TABLE seccion_hero ADD COLUMN IF NOT EXISTS logo TEXT DEFAULT 'Vino & Arena'`;
+await sql`ALTER TABLE seccion_hero ADD COLUMN IF NOT EXISTS titulo_normal TEXT DEFAULT 'Creando'`;
+await sql`ALTER TABLE seccion_hero ADD COLUMN IF NOT EXISTS titulo_italico TEXT DEFAULT 'Atmósferas'`;
+await sql`ALTER TABLE seccion_hero ADD COLUMN IF NOT EXISTS titulo_normal2 TEXT DEFAULT 'que Inspiran el Alma.'`;
+
+if (Astro.request.method === "POST") {
+  try {
+    const data = await Astro.request.formData();
+    const logo = String(data.get("logo") || "");
+    const eyebrow = String(data.get("eyebrow") || "");
+    const tituloNormal = String(data.get("titulo_normal") || "");
+    const tituloItal = String(data.get("titulo_italico") || "");
+    const tituloNorm2 = String(data.get("titulo_normal2") || "");
+    const descripcion = String(data.get("descripcion") || "");
+    const contador = String(data.get("contador") || "");
+    const imgPrincipal = String(data.get("img_principal_base64") || "");
+    const imgAcento = String(data.get("img_acento_base64") || "");
+
+    await sql`
+      UPDATE seccion_hero SET
+        logo             = ${logo},
+        eyebrow          = ${eyebrow},
+        titulo_normal    = ${tituloNormal},
+        titulo_italico   = ${tituloItal},
+        titulo_normal2   = ${tituloNorm2},
+        descripcion      = ${descripcion},
+        contador         = ${contador},
+        imagen_principal = ${imgPrincipal !== "" ? imgPrincipal : sql`imagen_principal`},
+        imagen_acento    = ${imgAcento !== "" ? imgAcento : sql`imagen_acento`}
+      WHERE id = 1
+    `;
+    return Astro.redirect("/admin-hero?ok=1");
+  } catch (e: any) {
+    saveError = e?.message || "Error al guardar";
+  }
+}
+
+const heroReq = await sql`SELECT * FROM seccion_hero WHERE id = 1`;
+const d = heroReq[0];
+const showOk = Astro.url.searchParams.get("ok") === "1";
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Admin Hero | Vino & Arena</title>
+  </head>
+  <body style="background-color: #f9f8f4;">
+    <div class="admin-layout">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h1 class="admin-logo">Admin Panel</h1>
+        </div>
+        <nav class="sidebar-nav">
+          <a href="/admin" class="active">Portafolio</a>
+          <a href="/admin-hero" class="active">Principal</a>
+          <a href="/admin-nosotros" class="active">Sobre Nosotros</a>
+          <a href="/admin-servicios" class="active">Servicios</a>
+          <a href="/admin-legado" class="active">Sección Legado</a>
+          <a href="/admin-corporativo" class="active">Corporativo</a>
+          <a href="/admin-cta" class="active">cuentanos tu vision</a>
+        </nav>
+      </aside>
+
+      <main class="main-content">
+        <header class="content-header">
+          <h2 style="font-family: 'Playfair Display', serif; font-size: 2rem;">
+            Editar Sección Hero
+          </h2>
+          <p style="color: #999; font-size: 0.85rem; margin-top: 6px;">
+            La sección principal que ven los visitantes al entrar a la página.
+          </p>
+          {
+            showOk && (
+              <div style="margin-top: 14px; background: #e6f4ea; border: 1px solid #4caf50; color: #2e7d32; padding: 12px 20px; border-radius: 6px; font-size: 0.88rem;">
+                ✓ Cambios guardados correctamente
+              </div>
+            )
+          }
+          {
+            saveError && (
+              <div style="margin-top: 14px; background: #fdecea; border: 1px solid #f44336; color: #c62828; padding: 12px 20px; border-radius: 6px; font-size: 0.85rem;">
+                <strong>Error:</strong> {saveError}
+              </div>
+            )
+          }
+        </header>
+
+        <form method="POST" style="margin-top: 32px;">
+          <input
+            type="hidden"
+            name="img_principal_base64"
+            id="field-img-principal"
+          />
+          <input type="hidden" name="img_acento_base64" id="field-img-acento" />
+
+          <div class="editor-layout" style="grid-template-columns: 1fr 360px;">
+            <!-- ── IZQUIERDA: TEXTOS ─────────────── -->
+            <div class="editor-main">
+              <div class="editor-card">
+                <h3>Textos</h3>
+
+                <div class="form-group">
+                  <label>Logo / Nombre de la Marca</label>
+                  <input
+                    type="text"
+                    name="logo"
+                    value={d.logo || "Vino & Arena"}
+                    placeholder="Vino & Arena"
+                  />
+                  <small style="color: #aaa; font-size: 0.75rem;"
+                    >Aparece en la esquina superior izquierda del menú.</small
+                  >
+                </div>
+
+                <div class="form-group">
+                  <label>Etiqueta dorada (texto pequeño superior)</label>
+                  <input
+                    type="text"
+                    name="eyebrow"
+                    value={d.eyebrow}
+                    placeholder="Curaduría de Atmósferas"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label>Título — Parte 1 (texto normal)</label>
+                  <input
+                    type="text"
+                    name="titulo_normal"
+                    value={d.titulo_normal || "Creando"}
+                    placeholder="Creando"
+                  />
+                </div>
+                <div class="form-group">
+                  <label>Título — Parte 2 (texto en cursiva vino)</label>
+                  <input
+                    type="text"
+                    name="titulo_italico"
+                    value={d.titulo_italico || "Atmósferas"}
+                    placeholder="Atmósferas"
+                  />
+                </div>
+                <div class="form-group">
+                  <label>Título — Parte 3 (segunda línea)</label>
+                  <input
+                    type="text"
+                    name="titulo_normal2"
+                    value={d.titulo_normal2 || "que Inspiran el Alma."}
+                    placeholder="que Inspiran el Alma."
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label>Descripción</label>
+                  <textarea name="descripcion" rows="3"
+                    >{d.descripcion}</textarea
+                  >
+                </div>
+
+                <div class="form-group">
+                  <label>Texto lateral (contador / años)</label>
+                  <input
+                    type="text"
+                    name="contador"
+                    value={d.contador}
+                    placeholder="2019 — Présente"
+                  />
+                  <small style="color: #aaa; font-size: 0.75rem;">
+                    Aparece girado verticalmente a la derecha de las imágenes.
+                  </small>
+                </div>
+              </div>
+
+              <!-- Preview del título -->
+              <div class="editor-card" style="margin-top: 24px;">
+                <h3>Vista previa del título</h3>
+                <div
+                  style="background: #f7f3ed; padding: 40px; border-radius: 8px;"
+                >
+                  <p
+                    id="prev-eyebrow"
+                    style="font-size: 0.68rem; letter-spacing: 5px; text-transform: uppercase; color: #C4A35A; margin-bottom: 16px;"
+                  >
+                    {d.eyebrow}
+                  </p>
+                  <h1
+                    id="prev-titulo"
+                    style="font-family: 'Playfair Display', serif; font-size: 2.8rem; font-weight: 300; line-height: 1.1; color: #1A1A1A; margin: 0 0 16px;"
+                  >
+                    {d.titulo_normal || "Creando"}
+                    <em style="color: #6B1528; font-style: italic;"
+                      >{d.titulo_italico || "Atmósferas"}</em
+                    ><br />{d.titulo_normal2 || "que Inspiran el Alma."}
+                  </h1>
+                  <p
+                    id="prev-desc"
+                    style="color: #8A8278; font-size: 0.9rem; line-height: 1.8; max-width: 420px;"
+                  >
+                    {d.descripcion}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── DERECHA: IMÁGENES ─────────────── -->
+            <div class="editor-sidebar">
+              <!-- Imagen principal -->
+              <div class="editor-card">
+                <h3>Imagen Principal</h3>
+                <p
+                  style="font-size: 0.78rem; color: #999; margin-bottom: 12px;"
+                >
+                  La foto grande (fondo del hero)
+                </p>
+                <div
+                  id="preview-principal"
+                  style={`width: 100%; height: 180px; background-image: url('${d.imagen_principal}'); background-size: cover; background-position: center; border-radius: 8px; margin-bottom: 12px; background-color: #eee;`}
+                >
+                </div>
+                <input
+                  type="file"
+                  id="file-principal"
+                  accept="image/*"
+                  style="font-size: 0.8rem;"
+                />
+              </div>
+
+              <!-- Imagen acento -->
+              <div class="editor-card" style="margin-top: 20px;">
+                <h3>Imagen Acento</h3>
+                <p
+                  style="font-size: 0.78rem; color: #999; margin-bottom: 12px;"
+                >
+                  La foto pequeña superpuesta
+                </p>
+                <div
+                  id="preview-acento"
+                  style={`width: 100%; height: 180px; background-image: url('${d.imagen_acento}'); background-size: cover; background-position: center; border-radius: 8px; margin-bottom: 12px; background-color: #eee;`}
+                >
+                </div>
+                <input
+                  type="file"
+                  id="file-acento"
+                  accept="image/*"
+                  style="font-size: 0.8rem;"
+                />
+              </div>
+
+              <!-- Guardar -->
+              <div class="editor-card" style="margin-top: 20px;">
+                <button type="submit" class="btn-publish" style="width: 100%;">
+                  GUARDAR CAMBIOS
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </main>
+    </div>
+
+    <script>
+      // Live preview textos
+      const eyebrowInput = document.querySelector<HTMLInputElement>(
+        'input[name="eyebrow"]',
+      );
+      const descInput = document.querySelector<HTMLTextAreaElement>(
+        'textarea[name="descripcion"]',
+      );
+
+      eyebrowInput?.addEventListener("input", () => {
+        const el = document.getElementById("prev-eyebrow");
+        if (el) el.textContent = eyebrowInput.value;
+      });
+      descInput?.addEventListener("input", () => {
+        const el = document.getElementById("prev-desc");
+        if (el) el.textContent = descInput.value;
+      });
+
+      function updateTitlePreview() {
+        const el = document.getElementById("prev-titulo");
+        if (!el) return;
+        const p1 =
+          document.querySelector<HTMLInputElement>(
+            'input[name="titulo_normal"]',
+          )?.value || "";
+        const p2 =
+          document.querySelector<HTMLInputElement>(
+            'input[name="titulo_italico"]',
+          )?.value || "";
+        const p3 =
+          document.querySelector<HTMLInputElement>(
+            'input[name="titulo_normal2"]',
+          )?.value || "";
+        el.innerHTML = `${p1} <em style="color:#6B1528;font-style:italic;">${p2}</em><br>${p3}`;
+      }
+      document
+        .querySelector('input[name="titulo_normal"]')
+        ?.addEventListener("input", updateTitlePreview);
+      document
+        .querySelector('input[name="titulo_italico"]')
+        ?.addEventListener("input", updateTitlePreview);
+      document
+        .querySelector('input[name="titulo_normal2"]')
+        ?.addEventListener("input", updateTitlePreview);
+
+      // Upload imagen principal
+      function setupUpload(
+        inputId: string,
+        previewId: string,
+        hiddenId: string,
+      ) {
+        const input = document.getElementById(inputId) as HTMLInputElement;
+        const preview = document.getElementById(previewId) as HTMLElement;
+        const hidden = document.getElementById(hiddenId) as HTMLInputElement;
+
+        input?.addEventListener("change", () => {
+          const file = input.files?.[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const base64 = e.target?.result as string;
+            hidden.value = base64;
+            preview.style.backgroundImage = `url(${base64})`;
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+
+      setupUpload("file-principal", "preview-principal", "field-img-principal");
+      setupUpload("file-acento", "preview-acento", "field-img-acento");
+    </script>
+  </body>
+</html>
