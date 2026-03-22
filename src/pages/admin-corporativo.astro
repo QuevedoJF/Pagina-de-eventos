@@ -1,0 +1,197 @@
+---
+import sql from "../lib/db.js";
+import "../styles/admin.css";
+
+// 1. LÓGICA DE GUARDADO ROBUSTA
+if (Astro.request.method === "POST") {
+  try {
+    const data = await Astro.request.formData();
+
+    // Capturamos los datos del formulario
+    const fb = String(data.get("facebook") || "");
+    const ig = String(data.get("instagram") || "");
+    const x = String(data.get("x") || "");
+    const priv = String(data.get("privacidad") || "");
+    const term = String(data.get("terminos") || "");
+    const tel = String(data.get("contacto") || "");
+
+    const fechaAhora = new Date();
+    const usuarioActivo = "Zuri (Administradora)";
+
+    // Intentamos actualizar el registro con ID 1
+    const result = await sql`
+      UPDATE configuracion_empresa 
+      SET url_facebook = ${fb}, 
+          url_instagram = ${ig}, 
+          url_x = ${x},
+          url_privacidad = ${priv},
+          url_terminos = ${term},
+          url_contacto = ${tel},
+          ultima_modificacion = ${fechaAhora},
+          editado_por = ${usuarioActivo}
+      WHERE id = 1
+      RETURNING id
+    `;
+
+    // Si por alguna razón no se actualizó nada (tabla vacía), lo insertamos
+    if (result.length === 0) {
+      await sql`
+        INSERT INTO configuracion_empresa 
+        (id, url_facebook, url_instagram, url_x, url_privacidad, url_terminos, url_contacto, ultima_modificacion, editado_por)
+        VALUES (1, ${fb}, ${ig}, ${x}, ${priv}, ${term}, ${tel}, ${fechaAhora}, ${usuarioActivo})
+      `;
+    }
+
+    return Astro.redirect("/admin-corporativo");
+  } catch (error) {
+    console.error("ERROR AL GUARDAR:", error);
+  }
+}
+
+// 2. LECTURA DE DATOS
+const configReq =
+  await sql`SELECT * FROM configuracion_empresa WHERE id = 1 LIMIT 1`;
+const config = configReq[0] || {
+  url_facebook: "",
+  url_instagram: "",
+  url_x: "",
+  url_privacidad: "",
+  url_terminos: "",
+  url_contacto: "",
+  ultima_modificacion: new Date(),
+  editado_por: "Sistema",
+};
+
+// Formateo de fecha seguro
+const fechaValida = config.ultima_modificacion
+  ? new Date(config.ultima_modificacion)
+  : new Date();
+const fechaFormateada = new Intl.DateTimeFormat("es-ES", {
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+}).format(fechaValida);
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Gestión Corporativa | Vino & Arena</title>
+  </head>
+  <body style="background-color: #f9f8f4;">
+    <div class="admin-layout">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h1 class="admin-logo">Vino & Arena</h1>
+          <span class="admin-subtitle">GESTIÓN DE CORPORATIVO</span>
+        </div>
+        <nav class="sidebar-nav">
+          <a href="/admin" class="active">Portafolio</a>
+          <a href="/admin-nosotros">Sobre Nosotros</a>
+          <a href="/admin-servicios">Servicios</a>
+          <a href="/admin-corporativo">Corporativo</a>
+          <a href="/admin-legado">Contactanos</a>
+          <a href="/admin-cta">cuentanos tu vision</a>
+        </nav>
+      </aside>
+
+      <main class="main-content">
+        <header class="content-header">
+          <h2 style="font-family: 'Playfair Display', serif; font-size: 2rem;">
+            Corporativo
+          </h2>
+        </header>
+
+        <form method="POST">
+          <div class="editor-layout" style="grid-template-columns: 1fr 350px;">
+            <div class="editor-main">
+              <div class="editor-card">
+                <h3>Presencia Social</h3>
+                <div class="form-group" style="margin-bottom: 15px;">
+                  <label>Instagram URL</label>
+                  <input
+                    type="url"
+                    name="instagram"
+                    value={config.url_instagram}
+                    placeholder="https://..."
+                  />
+                </div>
+                <div class="form-group" style="margin-bottom: 15px;">
+                  <label>Facebook URL</label>
+                  <input
+                    type="url"
+                    name="facebook"
+                    value={config.url_facebook}
+                    placeholder="https://..."
+                  />
+                </div>
+                <div class="form-group">
+                  <label>X URL</label>
+                  <input
+                    type="url"
+                    name="x"
+                    value={config.url_x}
+                    placeholder="https://..."
+                  />
+                </div>
+              </div>
+
+              <div class="editor-card">
+                <h3>Información del Estudio</h3>
+                <div class="form-group" style="margin-bottom: 20px;">
+                  <label>Política de Privacidad</label>
+                  <textarea
+                    name="privacidad"
+                    class="editor-textarea small"
+                    style="min-height: 150px;">{config.url_privacidad}</textarea
+                  >
+                </div>
+                <div class="form-group" style="margin-bottom: 20px;">
+                  <label>Términos y Condiciones</label>
+                  <textarea
+                    name="terminos"
+                    class="editor-textarea small"
+                    style="min-height: 150px;">{config.url_terminos}</textarea
+                  >
+                </div>
+                <div class="form-group">
+                  <label>Teléfono de Contacto</label>
+                  <input
+                    type="text"
+                    name="contacto"
+                    value={config.url_contacto}
+                    placeholder="+52..."
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="editor-sidebar">
+              <div class="action-buttons">
+                <button
+                  type="button"
+                  class="btn-discard"
+                  onclick="window.location.reload();">DESCARTAR</button
+                >
+                <button type="submit" class="btn-publish"
+                  >PUBLICAR CAMBIOS</button
+                >
+              </div>
+
+              <div class="editor-card">
+                <h3>SINCRONIZACIÓN WEB</h3>
+                <div class="meta-info">
+                  <p>
+                    Última actualización<br /><span>{fechaFormateada}</span>
+                  </p>
+                  <p>Editado por<br /><span>{config.editado_por}</span></p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </main>
+    </div>
+  </body>
+</html>

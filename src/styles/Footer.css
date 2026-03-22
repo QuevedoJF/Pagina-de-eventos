@@ -1,0 +1,131 @@
+/* 1. Variables */
+:root {
+  --bg-crema: #faf9f6;
+  --color-vino: #7a0016;
+  --texto-oscuro: #333333;
+  --texto-gris: #666666;
+}
+
+/* 2. El contenedor principal (Fondo de lado a lado) */
+.site-footer {
+  background-color: var(--bg-crema);
+  /* Redujimos la altura drásticamente aquí */
+  padding: 3rem 0 1.5rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  color: var(--texto-oscuro);
+  font-family: "Lato", sans-serif;
+  width: 100%;
+}
+
+/* 3. El ancho del contenido */
+.footer-container {
+  /* Cambiamos de 1200px a 92% para que ocupe casi toda la pantalla */
+  max-width: 92%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.footer-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 2rem;
+  /* Redujimos el espacio inferior entre los enlaces y el copyright */
+  margin-bottom: 2.5rem;
+}
+
+.footer-brand {
+  max-width: 450px;
+}
+
+.footer-brand h2 {
+  font-family: "Georgia", "Playfair Display", serif;
+  color: var(--color-vino);
+  font-size: 1.8rem;
+  margin: 0 0 0.5rem 0;
+  font-weight: normal;
+}
+
+.footer-brand p {
+  color: var(--texto-gris);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.footer-links {
+  display: flex;
+  gap: 6rem; /* Separamos un poco más las columnas de enlaces */
+  flex-wrap: wrap;
+}
+
+.link-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.link-column h3 {
+  font-size: 0.75rem;
+  color: var(--color-vino);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin: 0 0 0.2rem 0;
+}
+
+.link-column a {
+  color: var(--texto-gris);
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.link-column a:hover {
+  color: var(--color-vino);
+}
+
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.footer-bottom p {
+  color: var(--texto-gris);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.eco-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.eco-badge span {
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: var(--texto-oscuro);
+  letter-spacing: 1px;
+}
+
+@media (max-width: 768px) {
+  .footer-top {
+    flex-direction: column;
+    gap: 2rem;
+  }
+  .footer-links {
+    gap: 3rem;
+  }
+  .footer-bottom {
+    flex-direction: column;
+    text-align: center;
+    justify-content: center;
+  }
+}

@@ -1,86 +1,337 @@
 ---
-import Layout from "../layouts/Layout.astro";
+import sql from "../lib/db.js";
+import "../styles/index.css";
+import Footer from "./Footer.astro";
+
+const identidadReq = await sql`SELECT * FROM identidad_marca LIMIT 1`;
+const iden = identidadReq[0] || { cronica: "", mision: "", vision: "" };
+
+const servicios = await sql`
+  SELECT * FROM servicios 
+  WHERE estado = 'Activo' 
+  ORDER BY id ASC 
+  LIMIT 3
+`;
+
+const proyectos = await sql`
+  SELECT p.id, p.titulo, c.nombre as cat, i.ruta_imagen
+  FROM proyectos p
+  LEFT JOIN categorias c ON p.categoria_id = c.id
+  LEFT JOIN proyecto_imagenes i ON p.id = i.proyecto_id AND i.es_portada = true
+  ORDER BY p.creado_en DESC 
+  LIMIT 3
+`;
+const legadoReq = await sql`SELECT * FROM seccion_legado WHERE id = 1`;
+const legado = legadoReq[0] || {
+  titulo: "Un Legado de Elegancia Atemporal.",
+  descripcion:
+    "Creemos que un evento es mucho más que una reunión; es una obra de arte viva.",
+  punto_1: "Diseño de autor exclusivo",
+  punto_2: "Coordinación impecable",
+  punto_3: "Experiencias multisensoriales",
+  punto_4: "Atención personalizada 24/7",
+  url_boton: "mailto:hola@vinoarena.com",
+  ruta_imagen:
+    "https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?q=80&w=2070",
+  badge_titulo: "V & A",
+  badge_subtitulo: "Legado de Elegancia Atemporal",
+};
+
+function normalizarUrl(url: string): string {
+  if (!url) return "#";
+  const u = url.trim();
+  if (
+    u.startsWith("http") ||
+    u.startsWith("mailto:") ||
+    u.startsWith("tel:") ||
+    u.startsWith("#")
+  )
+    return u;
+  if (/^[+]?[\d\s\-()]+$/.test(u)) return `tel:${u.replace(/\s/g, "")}`;
+  if (u.includes("wa.me")) return `https://${u}`;
+  return u;
+}
 ---
 
-<Layout title="LuxeEvents | Inicio">
-  <header class="navbar">
-    <div class="logo">Pagina de Eventos</div>
-  </header>
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vino & Arena | Diseño y Curaduría de Eventos</title>
+    <meta
+      name="description"
+      content="Diseñamos entornos de lujo donde la estética impecable se encuentra con la emoción genuina."
+    />
+  </head>
+  <body>
+    <!-- ── NAVBAR ─────────────────────────────── -->
+    <nav class="navbar" id="navbar">
+      <a href="/" class="logo">Vino &amp; Arena</a>
+      <ul class="nav-links">
+        <li><a href="#firma">La Firma</a></li>
+        <li><a href="#experiencias">Experiencias</a></li>
+        <li><a href="#archivo">Archivo</a></li>
+        <li><a href="#contacto">Contacto</a></li>
+      </ul>
+      <a href="/proyectos" class="nav-cta">Colección</a>
+    </nav>
 
-  <main>
-    <section class="hero">
-      <span class="eyebrow">THE CURATED ATMOSPHERE</span>
-      <h1>Elevando<br />Momentos a Obras<br />Maestras.</h1>
-      <p>
-        Estilismo y coordinación de eventos de lujo para quienes exigen la
-        excelencia. Transformamos espacios en experiencias inolvidables.
-      </p>
+    <!-- ── HERO ───────────────────────────────── -->
+    <header class="hero container">
+      <div class="hero-content">
+        <div class="hero-eyebrow reveal">
+          <span>Curaduría de Atmósferas</span>
+        </div>
+        <h1 class="hero-title reveal reveal-delay-1">
+          Creando <em>Atmósferas</em><br />que Inspiran el Alma.
+        </h1>
+        <p class="hero-subtitle reveal reveal-delay-2">
+          Diseñamos entornos de lujo donde la estética impecable se encuentra
+          con la emoción genuina. Cada espacio cuenta una historia única.
+        </p>
+        <div class="hero-actions reveal reveal-delay-3">
+          <a href="#contacto" class="btn-primary">
+            <span>Reservar Cita</span>
+          </a>
+          <a href="/proyectos" class="btn-ghost"> Ver Portafolio → </a>
+        </div>
+      </div>
 
-      <div class="cta-buttons">
-        <a href="#contacto" class="btn btn-primary">Consultar Ahora</a>
-        <a href="#portafolio" class="btn btn-outline">Ver Nuestro Trabajo</a>
+      <div class="hero-visual reveal reveal-delay-2">
+        <div class="hero-img-main">
+          <img
+            src="https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=2098"
+            alt="Evento de lujo"
+          />
+        </div>
+        <div class="hero-img-accent">
+          <img
+            src="https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?q=80&w=1469"
+            alt="Detalles del evento"
+          />
+        </div>
+        <span class="hero-counter">2019 — Présente</span>
+      </div>
+
+      <div class="scroll-indicator">
+        <span>Scroll</span>
+        <div class="scroll-line"></div>
+      </div>
+    </header>
+
+    <!-- ── LA FIRMA ─────────────────────────────── -->
+    <section id="firma" class="firma-section">
+      <div class="container">
+        <div class="firma-grid">
+          <div class="firma-img-wrap reveal">
+            <img
+              src="https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=2069"
+              alt="Nuestra Firma"
+            />
+          </div>
+          <div>
+            <p class="section-label reveal">La Firma</p>
+            <h2 class="firma-title reveal reveal-delay-1">
+              Un Atelier<br /><em>de Emociones.</em>
+            </h2>
+            <blockquote class="firma-cronica reveal reveal-delay-2">
+              "{iden.cronica}"
+            </blockquote>
+            <div class="firma-pillars reveal reveal-delay-3">
+              <div>
+                <div class="pillar-label">Misión</div>
+                <p class="pillar-text">{iden.mision}</p>
+              </div>
+              <div>
+                <div class="pillar-label">Visión</div>
+                <p class="pillar-text">{iden.vision}</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
-  </main>
-</Layout>
 
-<style>
-  .navbar {
-    padding: 2rem;
-    text-align: center;
-  }
-  .logo {
-    font-family: "Georgia", serif;
-    font-size: 1.5rem;
-    color: var(--texto-oscuro);
-  }
-  .hero {
-    padding: 4rem 2rem;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1.5rem;
-  }
-  .eyebrow {
-    font-size: 0.8rem;
-    letter-spacing: 2px;
-    color: var(--texto-gris);
-  }
-  .hero h1 {
-    font-size: 2.8rem;
-    margin: 0;
-    line-height: 1.1;
-    color: var(--texto-oscuro);
-  }
-  .hero p {
-    color: var(--texto-gris);
-    max-width: 600px;
-    line-height: 1.6;
-    font-size: 1.1rem;
-  }
-  .cta-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    width: 100%;
-    max-width: 300px;
-    margin-top: 1rem;
-  }
-  .btn {
-    padding: 1rem;
-    text-decoration: none;
-    text-align: center;
-    font-size: 1rem;
-    transition: all 0.3s ease;
-  }
-  .btn-primary {
-    background-color: var(--color-vino);
-    color: white;
-  }
-  .btn-outline {
-    background-color: transparent;
-    color: var(--texto-oscuro);
-    border: 1px solid var(--texto-oscuro);
-  }
-</style>
+    <!-- ── EXPERIENCIAS ─────────────────────────── -->
+    <section id="experiencias" class="experiencias-section">
+      <div class="container">
+        <div class="section-header reveal">
+          <p class="section-label" style="justify-content: center;">
+            Diseño y Producción de Élite
+          </p>
+          <h2 class="section-title">
+            Experiencias <em style="font-style: italic; color: var(--wine);"
+              >Curadas</em>
+          </h2>
+          <p class="section-sub">
+            Bodas de autor y eventos corporativos de alto nivel
+          </p>
+        </div>
+
+        <div class="grid-3">
+          {
+            servicios.map((s, i) => (
+              <div class={`card-service reveal reveal-delay-${i + 1}`}>
+                <span class="card-number">0{i + 1}</span>
+                <img src={s.ruta_imagen || "/placeholder.jpg"} alt={s.titulo} />
+                <div class="card-overlay">
+                  <h3>{s.titulo}</h3>
+                  <p>{s.descripcion.substring(0, 110)}...</p>
+                  <div class="card-price">Desde ${s.precio_inicial} USD</div>
+                </div>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- ── ARCHIVO VISUAL ───────────────────────── -->
+    <section id="archivo" class="archivo-section">
+      <div class="container">
+        <div class="archivo-header-row">
+          <div>
+            <p class="section-label reveal">Visual Storytelling</p>
+            <h2 class="section-title reveal reveal-delay-1">
+              El Archivo <em style="font-style: italic; color: var(--wine);"
+                >Visual.</em>
+            </h2>
+            <p
+              class="section-sub reveal reveal-delay-2"
+              style="text-align: left; margin-top: 8px;"
+            >
+              Una selección de nuestras instalaciones más emblemáticas
+            </p>
+          </div>
+          <a href="/proyectos" class="ver-todo reveal"
+            >Ver todos los proyectos →</a
+          >
+        </div>
+
+        <div class="grid-3">
+          {
+            proyectos.map((p, i) => (
+              <a
+                href={`/proyecto/${p.id}`}
+                class={`project-item reveal reveal-delay-${i + 1}`}
+              >
+                <div class="project-img-box">
+                  <img
+                    src={p.ruta_imagen || "/placeholder.jpg"}
+                    alt={p.titulo}
+                  />
+                </div>
+                <span class="project-cat">{p.cat || "DISEÑO"}</span>
+                <h3 class="project-title">{p.titulo}</h3>
+              </a>
+            ))
+          }
+        </div>
+
+        <div class="archivo-cta reveal">
+          <a
+            href="/proyectos"
+            class="btn-primary"
+            style="display: inline-flex;"
+          >
+            <span>Explorar toda la colección</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── LEGADO (CTA) ─────────────────────────── -->
+    <section class="legado-section" id="contacto">
+      <div class="container">
+        <div class="legado-grid">
+          <div class="legado-img reveal">
+            <img src={legado.ruta_imagen} alt={legado.titulo} />
+            <div class="legado-badge">
+              <div class="legado-badge-title">
+                {legado.badge_titulo || "V & A"}
+              </div>
+              <div class="legado-badge-sub">
+                {legado.badge_subtitulo || "Legado de Elegancia Atemporal"}
+              </div>
+            </div>
+          </div>
+          <div class="legado-content reveal reveal-delay-2">
+            <p class="section-label" style="color: var(--gold);">
+              Trabajemos Juntos
+            </p>
+            <h2 class="legado-title" set:html={legado.titulo} />
+            <p class="legado-text">{legado.descripcion}</p>
+            <div class="legado-checks">
+              {
+                legado.punto_1 && (
+                  <div class="legado-check">{legado.punto_1}</div>
+                )
+              }
+              {
+                legado.punto_2 && (
+                  <div class="legado-check">{legado.punto_2}</div>
+                )
+              }
+              {
+                legado.punto_3 && (
+                  <div class="legado-check">{legado.punto_3}</div>
+                )
+              }
+              {
+                legado.punto_4 && (
+                  <div class="legado-check">{legado.punto_4}</div>
+                )
+              }
+            </div>
+            <a href={normalizarUrl(legado.url_boton)} class="btn-legado">
+              <span>✦ Hablemos de su Próxima Visión</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <Footer />
+
+    <script>
+      // Navbar scroll effect
+      const navbar = document.getElementById("navbar");
+      window.addEventListener("scroll", () => {
+        navbar?.classList.toggle("scrolled", window.scrollY > 40);
+      });
+
+      // Reveal on scroll
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("active");
+            }
+          });
+        },
+        { threshold: 0.1, rootMargin: "0px 0px -40px 0px" },
+      );
+
+      document
+        .querySelectorAll(".reveal")
+        .forEach((el) => observer.observe(el));
+
+      // Smooth counter animation for stats
+      const counters = document.querySelectorAll(".stat-number");
+      const counterObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("counted");
+              counterObserver.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 1 },
+      );
+
+      counters.forEach((c) => counterObserver.observe(c));
+    </script>
+  </body>
+</html>

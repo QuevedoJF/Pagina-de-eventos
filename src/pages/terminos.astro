@@ -1,0 +1,50 @@
+---
+import sql from "../lib/db.js";
+import "../styles/index.css";
+import Footer from "./Footer.astro";
+
+const configReq =
+  await sql`SELECT url_terminos FROM configuracion_empresa LIMIT 1`;
+const contenido =
+  configReq[0]?.url_terminos ||
+  "Los términos y condiciones se están actualizando.";
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Términos y Condiciones | Vino & Arena</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Lato&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body style="background-color: #faf9f6;">
+    <nav class="navbar">
+      <div class="logo">Vino & Arena</div>
+      <ul class="nav-links">
+        <li><a href="/">← Volver al Inicio</a></li>
+      </ul>
+    </nav>
+
+    <main
+      class="container"
+      style="padding: 80px 20px; max-width: 800px; min-height: 70vh;"
+    >
+      <h1
+        style="font-family: 'Playfair Display', serif; color: #7a0016; font-size: 3rem; margin-bottom: 40px; font-weight: 400;"
+      >
+        Términos y Condiciones
+      </h1>
+
+      <div
+        style="white-space: pre-wrap; line-height: 1.8; color: #444; font-size: 1.1rem; font-family: 'Lato', sans-serif;"
+      >
+        {contenido}
+      </div>
+    </main>
+
+    <Footer />
+  </body>
+</html>

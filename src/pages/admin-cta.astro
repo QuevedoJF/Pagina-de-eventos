@@ -1,0 +1,328 @@
+---
+import sql from "../lib/db.js";
+import "../styles/admin.css";
+
+let saveError = "";
+
+if (Astro.request.method === "POST") {
+  try {
+    const data = await Astro.request.formData();
+    const titulo = String(data.get("titulo") || "");
+    const subtitulo = String(data.get("subtitulo") || "");
+    const descripcion = String(data.get("descripcion") || "");
+    const textoBoton = String(data.get("texto_boton") || "");
+    const urlBoton = String(data.get("url_boton") || "");
+
+    // Asegurar tabla y fila existen
+    await sql`
+      CREATE TABLE IF NOT EXISTS seccion_cta (
+        id SERIAL PRIMARY KEY,
+        titulo TEXT DEFAULT 'Cuéntenos su Visión.',
+        subtitulo TEXT DEFAULT '¿Tienes un proyecto en mente?',
+        descripcion TEXT DEFAULT 'Cada evento comienza con una conversación.',
+        texto_boton TEXT DEFAULT 'Iniciar Conversación',
+        url_boton TEXT DEFAULT 'mailto:hola@vinoarena.com'
+      )
+    `;
+    await sql`INSERT INTO seccion_cta (id) VALUES (1) ON CONFLICT (id) DO NOTHING`;
+
+    await sql`
+      UPDATE seccion_cta
+      SET titulo      = ${titulo},
+          subtitulo   = ${subtitulo},
+          descripcion = ${descripcion},
+          texto_boton = ${textoBoton},
+          url_boton   = ${urlBoton}
+      WHERE id = 1
+    `;
+
+    return Astro.redirect("/admin-cta?ok=1");
+  } catch (e: any) {
+    console.error(e);
+    saveError = e?.message || "Error al guardar";
+  }
+}
+
+// Asegurar tabla y obtener datos
+await sql`
+  CREATE TABLE IF NOT EXISTS seccion_cta (
+    id SERIAL PRIMARY KEY,
+    titulo TEXT DEFAULT 'Cuéntenos su Visión.',
+    subtitulo TEXT DEFAULT '¿Tienes un proyecto en mente?',
+    descripcion TEXT DEFAULT 'Cada evento comienza con una conversación.',
+    texto_boton TEXT DEFAULT 'Iniciar Conversación',
+    url_boton TEXT DEFAULT 'mailto:hola@vinoarena.com'
+  )
+`;
+await sql`INSERT INTO seccion_cta (id) VALUES (1) ON CONFLICT (id) DO NOTHING`;
+const ctaReq = await sql`SELECT * FROM seccion_cta WHERE id = 1`;
+const d = ctaReq[0];
+const showOk = Astro.url.searchParams.get("ok") === "1";
+
+// Normalizar URL del botón
+function normalizarUrl(url: string): string {
+  if (!url) return "#";
+  const u = url.trim();
+  // Ya tiene prefijo válido
+  if (
+    u.startsWith("http") ||
+    u.startsWith("mailto:") ||
+    u.startsWith("tel:") ||
+    u.startsWith("wa.me") ||
+    u.startsWith("#")
+  )
+    return u;
+  // Solo números (con o sin +)
+  if (/^[+]?[\d\s\-()]+$/.test(u)) return `tel:${u.replace(/\s/g, "")}`;
+  // wa.me sin https
+  if (u.includes("wa.me")) return `https://${u}`;
+  return u;
+}
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Admin CTA | Vino & Arena</title>
+  </head>
+  <body style="background-color: #f9f8f4;">
+    <div class="admin-layout">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h1 class="admin-logo">Admin Panel</h1>
+        </div>
+        <nav class="sidebar-nav">
+          <a href="/admin">Portafolio</a>
+          <a href="/admin-nosotros">Sobre Nosotros</a>
+          <a href="/admin-servicios">Servicios</a>
+          <a href="/admin-legado">Sección Legado</a>
+          <a href="/admin-corporativo">Corporativo</a>
+          <a href="/admin-cta" class="active">Sección Contacto</a>
+        </nav>
+      </aside>
+
+      <main class="main-content">
+        <header class="content-header">
+          <h2 style="font-family: 'Playfair Display', serif; font-size: 2rem;">
+            Editar Sección de Contacto
+          </h2>
+          <p style="color: #999; font-size: 0.85rem; margin-top: 6px;">
+            Bloque "Cuéntenos su Visión" en la página de proyectos.
+          </p>
+
+          {
+            showOk && (
+              <div style="margin-top: 16px; background: #e6f4ea; border: 1px solid #4caf50; color: #2e7d32; padding: 12px 20px; border-radius: 6px; font-size: 0.88rem;">
+                ✓ Cambios guardados correctamente
+              </div>
+            )
+          }
+          {
+            saveError && (
+              <div style="margin-top: 16px; background: #fdecea; border: 1px solid #f44336; color: #c62828; padding: 12px 20px; border-radius: 6px; font-size: 0.85rem;">
+                <strong>Error:</strong> {saveError}
+              </div>
+            )
+          }
+        </header>
+
+        <form method="POST" class="admin-form">
+          <div class="editor-layout" style="grid-template-columns: 1fr 360px;">
+            <!-- CONTENIDO -->
+            <div class="editor-main">
+              <div class="editor-card">
+                <h3>Textos de la Sección</h3>
+
+                <div class="form-group">
+                  <label>Etiqueta superior (texto pequeño dorado)</label>
+                  <input
+                    type="text"
+                    name="subtitulo"
+                    value={d.subtitulo}
+                    placeholder="¿Tienes un proyecto en mente?"
+                    required
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label>Título principal</label>
+                  <input
+                    type="text"
+                    name="titulo"
+                    value={d.titulo}
+                    placeholder="Cuéntenos su Visión."
+                    required
+                  />
+                  <small style="color: #aaa; font-size: 0.75rem;">
+                    Puedes usar &lt;em&gt; para cursiva en vino, ej: Cuéntenos
+                    su &lt;em&gt;Visión.&lt;/em&gt;
+                  </small>
+                </div>
+
+                <div class="form-group">
+                  <label>Descripción</label>
+                  <textarea name="descripcion" rows="3" required
+                    >{d.descripcion}</textarea
+                  >
+                </div>
+              </div>
+
+              <!-- PREVIEW -->
+              <div class="editor-card" style="margin-top: 24px;">
+                <h3>Vista Previa</h3>
+                <div
+                  id="preview-box"
+                  style="background: #EDE8DF; padding: 60px 40px; text-align: center; border-radius: 8px;"
+                >
+                  <p
+                    id="prev-sub"
+                    style="font-size: 0.65rem; letter-spacing: 5px; text-transform: uppercase; color: #C4A35A; display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 16px;"
+                  >
+                    <span
+                      style="display:inline-block; width:32px; height:1px; background:#C4A35A;"
+                    ></span>
+                    {d.subtitulo}
+                  </p>
+                  <h2
+                    id="prev-titulo"
+                    style="font-family: 'Playfair Display', serif; font-size: 2.8rem; font-weight: 300; color: #1A1A1A; margin-bottom: 16px;"
+                    set:html={d.titulo}
+                  />
+                  <p
+                    id="prev-desc"
+                    style="color: #8A8278; font-size: 0.88rem; max-width: 420px; margin: 0 auto 32px; line-height: 1.9;"
+                  >
+                    {d.descripcion}
+                  </p>
+                  <div
+                    id="prev-btn"
+                    style="display: inline-block; background: #6B1528; color: white; padding: 16px 36px; font-size: 0.7rem; letter-spacing: 3px; text-transform: uppercase;"
+                  >
+                    {d.texto_boton}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SIDEBAR BOTÓN -->
+            <div class="editor-sidebar">
+              <div class="editor-card">
+                <h3>Botón de Acción</h3>
+
+                <div class="form-group">
+                  <label>Texto del botón</label>
+                  <input
+                    type="text"
+                    name="texto_boton"
+                    value={d.texto_boton}
+                    placeholder="Iniciar Conversación"
+                    required
+                  />
+                </div>
+
+                <div class="form-group" style="margin-top: 20px;">
+                  <label>Enlace del botón</label>
+                  <input
+                    type="text"
+                    name="url_boton"
+                    value={d.url_boton}
+                    placeholder="https://wa.me/521XXXXXXXXXX"
+                  />
+                  <small
+                    style="color: #aaa; font-size: 0.75rem; margin-top: 6px; display: block;"
+                  >
+                    Escribe el número completo con código de país (ej:
+                    529931072419) o usa uno de los atajos:
+                  </small>
+                  <div
+                    style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;"
+                  >
+                    <button
+                      type="button"
+                      class="url-preset"
+                      data-url="mailto:hola@vinoarena.com"
+                      style="background: none; border: 1px solid #ddd; padding: 8px 14px; font-size: 0.75rem; cursor: pointer; border-radius: 4px; text-align: left; transition: all 0.2s;"
+                    >
+                      📧 Correo electrónico
+                    </button>
+                    <button
+                      type="button"
+                      class="url-preset"
+                      data-url="https://wa.me/52"
+                      style="background: none; border: 1px solid #ddd; padding: 8px 14px; font-size: 0.75rem; cursor: pointer; border-radius: 4px; text-align: left; transition: all 0.2s;"
+                    >
+                      💬 WhatsApp (edita el número)
+                    </button>
+                    <button
+                      type="button"
+                      class="url-preset"
+                      data-url="tel:+521"
+                      style="background: none; border: 1px solid #ddd; padding: 8px 14px; font-size: 0.75rem; cursor: pointer; border-radius: 4px; text-align: left; transition: all 0.2s;"
+                    >
+                      📞 Teléfono (edita el número)
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  class="btn-publish"
+                  style="width: 100%; margin-top: 28px;"
+                >
+                  GUARDAR CAMBIOS
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </main>
+    </div>
+
+    <script>
+      // Live preview
+      const fields: Record<string, string> = {
+        subtitulo: "prev-sub",
+        titulo: "prev-titulo",
+        descripcion: "prev-desc",
+        texto_boton: "prev-btn",
+      };
+
+      Object.entries(fields).forEach(([name, previewId]) => {
+        const input = document.querySelector<
+          HTMLInputElement | HTMLTextAreaElement
+        >(`[name="${name}"]`);
+        const preview = document.getElementById(previewId);
+        if (!input || !preview) return;
+
+        input.addEventListener("input", () => {
+          if (name === "titulo") {
+            preview.innerHTML = input.value;
+          } else {
+            preview.textContent = input.value;
+          }
+        });
+      });
+
+      // URL presets
+      const urlInput = document.querySelector<HTMLInputElement>(
+        'input[name="url_boton"]',
+      );
+      document
+        .querySelectorAll<HTMLButtonElement>(".url-preset")
+        .forEach((btn) => {
+          btn.addEventListener("click", () => {
+            if (urlInput) urlInput.value = btn.dataset.url || "";
+          });
+          btn.addEventListener("mouseenter", () => {
+            btn.style.background = "#f5f0eb";
+            btn.style.borderColor = "#6B1528";
+          });
+          btn.addEventListener("mouseleave", () => {
+            btn.style.background = "none";
+            btn.style.borderColor = "#ddd";
+          });
+        });
+    </script>
+  </body>
+</html>

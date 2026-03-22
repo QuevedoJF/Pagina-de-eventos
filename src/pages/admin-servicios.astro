@@ -1,0 +1,258 @@
+---
+import sql from "../lib/db.js";
+import "../styles/admin.css";
+
+// 1. LÓGICA DE GUARDADO (CREAR O EDITAR)
+if (Astro.request.method === "POST") {
+  try {
+    const data = await Astro.request.formData();
+    const action = String(data.get("action") || "");
+    const id = data.get("id") ? Number(data.get("id")) : null;
+    const titulo = String(data.get("titulo") || "");
+    const descripcion = String(data.get("descripcion") || "");
+    const precio = Number(data.get("precio") || 0);
+    const estado = String(data.get("estado") || "Activo");
+    const imagen = String(data.get("imagen_base64") || "");
+
+    if (action === "save") {
+      if (id) {
+        await sql`
+          UPDATE servicios 
+          SET titulo = ${titulo}, descripcion = ${descripcion}, precio_inicial = ${precio}, 
+              estado = ${estado}, ruta_imagen = ${imagen}
+          WHERE id = ${id}
+        `;
+      } else {
+        await sql`
+          INSERT INTO servicios (titulo, descripcion, precio_inicial, estado, moneda, ruta_imagen)
+          VALUES (${titulo}, ${descripcion}, ${precio}, ${estado}, 'USD', ${imagen})
+        `;
+      }
+    }
+    return Astro.redirect("/admin-servicios");
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+const servicios = await sql`SELECT * FROM servicios ORDER BY id DESC`;
+---
+
+<!doctype html>
+<html lang="es">
+  <head
+    ><meta charset="UTF-8" /><title>
+      Gestión de Servicios | Vino & Arena
+    </title></head
+  >
+  <body style="background-color: #f9f8f4;">
+    <div class="admin-layout">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h1 class="admin-logo">Vino & Arena</h1>
+          <span class="admin-subtitle">GESTIÓN DE SERVICIOS</span>
+        </div>
+        <nav class="sidebar-nav">
+          <a href="/admin" class="active">Portafolio</a>
+          <a href="/admin-nosotros">Sobre Nosotros</a>
+          <a href="/admin-servicios">Servicios</a>
+          <a href="/admin-corporativo">Corporativo</a>
+          <a href="/admin-legado">Contactanos</a>
+          <a href="/admin-cta">cuentanos tu vision</a>
+        </nav>
+      </aside>
+
+      <main class="main-content">
+        <header
+          class="content-header"
+          style="border-bottom: 1px solid #eee; padding-bottom: 20px; margin-bottom: 40px;"
+        >
+          <span
+            style="font-size: 0.75rem; letter-spacing: 3px; color: #999; text-transform: uppercase;"
+            >Editor</span
+          >
+          <h2
+            style="font-family: 'Playfair Display', serif; font-size: 2.5rem; margin: 0; font-weight: 400;"
+          >
+            Servicios
+          </h2>
+        </header>
+
+        <div class="service-grid-admin">
+          <button
+            id="btnNuevo"
+            style="background: white; border: 2px dashed #ccc; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 180px; transition: all 0.3s;"
+          >
+            <span style="font-size: 3rem; color: #ccc; font-weight: 200;"
+              >+</span
+            >
+            <span
+              style="font-size: 0.8rem; letter-spacing: 2px; color: #999; text-transform: uppercase; margin-top: 10px;"
+              >Nuevo Servicio</span
+            >
+          </button>
+
+          {
+            servicios.map((s) => (
+              <div
+                class="editor-card"
+                style={`position: relative; border-radius: 8px; transition: all 0.3s; ${s.estado === "Inactivo" ? "filter: grayscale(1); opacity: 0.7;" : ""}`}
+              >
+                <div style="display: flex; gap: 15px;">
+                  <div
+                    style={`width: 70px; height: 70px; background-image: url(${s.ruta_imagen || "https://via.placeholder.com/150"}); background-size: cover; background-position: center; border-radius: 4px; flex-shrink: 0;`}
+                  />
+
+                  <div style="flex: 1;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <h4 style="font-family: 'Playfair Display', serif; font-size: 1.2rem; margin: 0;">
+                        {s.titulo}
+                      </h4>
+                      <button
+                        class="btn-edit-trigger"
+                        style="background: none; border: none; cursor: pointer; font-size: 1rem; color: var(--wine);"
+                        data-id={s.id}
+                        data-titulo={s.titulo}
+                        data-desc={s.descripcion}
+                        data-precio={s.precio_inicial}
+                        data-estado={s.estado}
+                        data-img={s.ruta_imagen}
+                      >
+                        ✎
+                      </button>
+                    </div>
+
+                    <span
+                      style={`font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; padding: 2px 6px; border-radius: 3px; background: ${s.estado === "Activo" ? "#e6f4ea" : "#eee"}; color: ${s.estado === "Activo" ? "#1e8e3e" : "#666"}`}
+                    >
+                      {s.estado === "Activo" ? "● En línea" : "● Oculto"}
+                    </span>
+
+                    <p style="color: #888; font-size: 0.85rem; margin: 10px 0 0 0; line-height: 1.4;">
+                      Desde ${s.precio_inicial} USD
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))
+          }
+        </div>
+      </main>
+    </div>
+
+    <div id="modal-servicio" class="modal-overlay">
+      <div class="modal-content" style="max-width: 500px; border-radius: 12px;">
+        <div class="modal-header">
+          <h3 id="modalTitle" style="font-family: 'Playfair Display', serif;">
+            Servicio
+          </h3>
+          <button type="button" class="btn-close" id="closeModal"
+            >&times;</button
+          >
+        </div>
+        <form method="POST" class="admin-form">
+          <input type="hidden" name="action" value="save" />
+          <input type="hidden" name="id" id="field-id" />
+          <input type="hidden" name="imagen_base64" id="field-img-base64" />
+
+          <div class="form-group">
+            <label>Imagen de Portada</label>
+            <div
+              id="img-preview"
+              style="width: 100%; height: 120px; background-color: #f5f5f5; background-size: cover; background-position: center; border-radius: 8px; margin-bottom: 10px; border: 1px solid #eee;"
+            >
+            </div>
+            <input
+              type="file"
+              id="file-input"
+              accept="image/*"
+              style="font-size: 0.8rem;"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Título</label>
+            <input type="text" name="titulo" id="field-titulo" required />
+          </div>
+          <div class="form-group">
+            <label>Descripción</label>
+            <textarea name="descripcion" id="field-desc" rows="3" required
+            ></textarea>
+          </div>
+          <div class="card-row">
+            <div class="form-group">
+              <label>Precio (USD)</label>
+              <input type="number" name="precio" id="field-precio" required />
+            </div>
+            <div class="form-group">
+              <label>Visibilidad</label>
+              <select name="estado" id="field-estado">
+                <option value="Activo">Activo (Visible)</option>
+                <option value="Inactivo">Inactivo (Oculto)</option>
+              </select>
+            </div>
+          </div>
+          <button
+            type="submit"
+            class="btn-publish"
+            style="margin-top: 20px; width: 100%;">GUARDAR CAMBIOS</button
+          >
+        </form>
+      </div>
+    </div>
+
+    <script>
+      const modal = document.getElementById("modal-servicio") as HTMLElement;
+      const imgPreview = document.getElementById("img-preview") as HTMLElement;
+      const imgInput = document.getElementById(
+        "file-input",
+      ) as HTMLInputElement;
+      const hiddenImg = document.getElementById(
+        "field-img-base64",
+      ) as HTMLInputElement;
+
+      imgInput?.addEventListener("change", (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const base64 = event.target?.result as string;
+            hiddenImg.value = base64;
+            imgPreview.style.backgroundImage = `url(${base64})`;
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      document.querySelectorAll(".btn-edit-trigger").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          const b = e.currentTarget as HTMLButtonElement;
+          (document.getElementById("field-id") as HTMLInputElement).value =
+            b.dataset.id || "";
+          (document.getElementById("field-titulo") as HTMLInputElement).value =
+            b.dataset.titulo || "";
+          (document.getElementById("field-desc") as HTMLTextAreaElement).value =
+            b.dataset.desc || "";
+          (document.getElementById("field-precio") as HTMLInputElement).value =
+            b.dataset.precio || "";
+          (document.getElementById("field-estado") as HTMLSelectElement).value =
+            b.dataset.estado || "Activo";
+          hiddenImg.value = b.dataset.img || "";
+          imgPreview.style.backgroundImage = `url(${b.dataset.img || ""})`;
+          modal.style.display = "flex";
+        });
+      });
+
+      document.getElementById("btnNuevo")?.addEventListener("click", () => {
+        (document.getElementById("field-id") as HTMLInputElement).value = "";
+        hiddenImg.value = "";
+        imgPreview.style.backgroundImage = "none";
+        modal.style.display = "flex";
+      });
+
+      document.getElementById("closeModal")?.addEventListener("click", () => {
+        modal.style.display = "none";
+      });
+    </script>
+  </body>
+</html>

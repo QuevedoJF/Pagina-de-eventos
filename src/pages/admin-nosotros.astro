@@ -1,0 +1,147 @@
+---
+import sql from "../lib/db.js";
+import "../styles/admin.css";
+
+// 1. LÓGICA DE GUARDADO DINÁMICO
+if (Astro.request.method === "POST") {
+  try {
+    const data = await Astro.request.formData();
+    const cronica = String(data.get("cronica") || "");
+    const mision = String(data.get("mision") || "");
+    const vision = String(data.get("vision") || "");
+
+    const fechaAhora = new Date();
+    const usuarioActivo = "Zuri (Administradora)";
+
+    const check = await sql`SELECT id FROM identidad_marca LIMIT 1`;
+
+    if (check.length > 0) {
+      await sql`
+        UPDATE identidad_marca 
+        SET cronica = ${cronica}, 
+            mision = ${mision}, 
+            vision = ${vision},
+            ultima_modificacion = ${fechaAhora},
+            editado_por = ${usuarioActivo}
+      `;
+    } else {
+      await sql`
+        INSERT INTO identidad_marca (cronica, mision, vision, ultima_modificacion, editado_por) 
+        VALUES (${cronica}, ${mision}, ${vision}, ${fechaAhora}, ${usuarioActivo})
+      `;
+    }
+    return Astro.redirect("/admin-nosotros");
+  } catch (error) {
+    console.error("Error al guardar:", error);
+  }
+}
+
+// 2. LECTURA DE DATOS REALES
+const identidadReq = await sql`SELECT * FROM identidad_marca LIMIT 1`;
+const identidad = identidadReq[0] || {
+  cronica: "",
+  mision: "",
+  vision: "",
+  ultima_modificacion: null,
+  editado_por: "Sin registros",
+};
+
+// SEGURO CONTRA EL RANGEERROR
+const fechaValida =
+  identidad.ultima_modificacion &&
+  !isNaN(new Date(identidad.ultima_modificacion).getTime())
+    ? new Date(identidad.ultima_modificacion)
+    : new Date();
+
+const fechaFormateada = new Intl.DateTimeFormat("es-ES", {
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+}).format(fechaValida);
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Editor Sobre Nosotros | Vino & Arena</title>
+  </head>
+  <body style="background-color: #f9f8f4;">
+    <div class="admin-layout">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h1 class="admin-logo">Vino & Arena</h1>
+          <span class="admin-subtitle">GESTIÓN DE NOSOTROS</span>
+        </div>
+        <nav class="sidebar-nav">
+          <a href="/admin" class="active">Portafolio</a>
+          <a href="/admin-nosotros">Sobre Nosotros</a>
+          <a href="/admin-servicios">Servicios</a>
+          <a href="/admin-corporativo">Corporativo</a>
+          <a href="/admin-legado">Contactanos</a>
+          <a href="/admin-cta">cuentanos tu vision</a>
+        </nav>
+      </aside>
+
+      <main class="main-content">
+        <header class="content-header">
+          <h2 style="font-family: 'Playfair Display', serif; font-size: 2rem;">
+            Sobre Nosotros
+          </h2>
+        </header>
+
+        <form method="POST">
+          <div class="editor-layout" style="grid-template-columns: 1fr 350px;">
+            <div class="editor-main">
+              <div class="editor-card">
+                <h3>Nuestra Historia</h3>
+                <textarea name="cronica" class="editor-textarea" required
+                  >{identidad.cronica}</textarea
+                >
+              </div>
+
+              <div class="card-row">
+                <div class="editor-card">
+                  <h3>Misión</h3>
+                  <textarea name="mision" class="editor-textarea small" required
+                    >{identidad.mision}</textarea
+                  >
+                </div>
+                <div class="editor-card">
+                  <h3>Visión</h3>
+                  <textarea name="vision" class="editor-textarea small" required
+                    >{identidad.vision}</textarea
+                  >
+                </div>
+              </div>
+            </div>
+
+            <div class="editor-sidebar">
+              <div class="action-buttons">
+                <button
+                  type="button"
+                  class="btn-discard"
+                  onclick="window.location.reload();">DESCARTAR</button
+                >
+                <button type="submit" class="btn-publish"
+                  >PUBLICAR CAMBIOS</button
+                >
+              </div>
+
+              <div class="editor-card">
+                <h3>ESTADO DE PUBLICACIÓN</h3>
+                <div style="margin: 15px 0;">
+                  <span class="status-badge">● Publicado en Web</span>
+                </div>
+                <div class="meta-info">
+                  <p>Última modificación<br /><span>{fechaFormateada}</span></p>
+                  <p>Editado por<br /><span>{identidad.editado_por}</span></p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </main>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,206 @@
+---
+import sql from "../lib/db.js";
+import "../styles/index.css";
+import Footer from "./Footer.astro";
+
+const proyectos = await sql`
+  SELECT p.id, p.titulo, c.nombre as cat, i.ruta_imagen
+  FROM proyectos p
+  LEFT JOIN categorias c ON p.categoria_id = c.id
+  LEFT JOIN proyecto_imagenes i ON p.id = i.proyecto_id AND i.es_portada = true
+  ORDER BY p.creado_en DESC
+`;
+
+const categorias = [...new Set(proyectos.map((p) => p.cat).filter(Boolean))];
+
+// Asegurar columnas y obtener CTA
+await sql`
+  CREATE TABLE IF NOT EXISTS seccion_cta (
+    id SERIAL PRIMARY KEY,
+    titulo TEXT DEFAULT 'Cuéntenos su Visión.',
+    subtitulo TEXT DEFAULT '¿Tienes un proyecto en mente?',
+    descripcion TEXT DEFAULT 'Cada evento comienza con una conversación. Descubra cómo transformamos su idea en una experiencia inigualable.',
+    texto_boton TEXT DEFAULT 'Iniciar Conversación',
+    url_boton TEXT DEFAULT 'mailto:hola@vinoarena.com'
+  )
+`;
+await sql`INSERT INTO seccion_cta (id) VALUES (1) ON CONFLICT (id) DO NOTHING`;
+const ctaReq = await sql`SELECT * FROM seccion_cta WHERE id = 1`;
+const cta = ctaReq[0];
+
+function normalizarUrl(url: string): string {
+  if (!url) return "#";
+  const u = url.trim();
+  if (
+    u.startsWith("http") ||
+    u.startsWith("mailto:") ||
+    u.startsWith("tel:") ||
+    u.startsWith("#")
+  )
+    return u;
+  if (/^[+]?[\d\s\-()]+$/.test(u)) return `tel:${u.replace(/\s/g, "")}`;
+  if (u.includes("wa.me")) return `https://${u}`;
+  return u;
+}
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Colección Completa | Vino &amp; Arena</title>
+    <meta
+      name="description"
+      content="Archivo visual completo — todas nuestras instalaciones y proyectos selectos."
+    />
+  </head>
+  <body>
+    <!-- ── NAVBAR ─────────────────────────────── -->
+    <nav class="navbar" id="navbar">
+      <a href="/" class="logo">Vino &amp; Arena</a>
+      <ul class="nav-links">
+        <li><a href="/">Inicio</a></li>
+        <li><a href="/#firma">La Firma</a></li>
+        <li><a href="/#experiencias">Experiencias</a></li>
+      </ul>
+      <a href="/" class="nav-cta">← Inicio</a>
+    </nav>
+
+    <!-- ── GALLERY HEADER ───────────────────────── -->
+    <header class="gallery-header container">
+      <p class="section-label reveal">Archivo Completo</p>
+      <h1 class="gallery-title reveal reveal-delay-1">
+        Colección<br /><em>Completa.</em>
+      </h1>
+      <p
+        class="section-sub reveal reveal-delay-2"
+        style="text-align: left; margin-top: 20px; font-size: 0.78rem;"
+      >
+        {proyectos.length} proyectos &mdash; Diseño y curaduría de atmósferas únicas
+      </p>
+    </header>
+
+    <!-- ── FILTER BAR ───────────────────────────── -->
+    <div class="container" style="padding-bottom: 0;">
+      <div class="filter-bar reveal">
+        <button class="filter-btn active" data-filter="all">Todos</button>
+        {
+          categorias.map((cat) => (
+            <button class="filter-btn" data-filter={cat}>
+              {cat}
+            </button>
+          ))
+        }
+      </div>
+    </div>
+
+    <!-- ── PROJECTS GRID ─────────────────────────── -->
+    <main class="container gallery-grid">
+      <div class="grid-3" id="projects-grid">
+        {
+          proyectos.map((p, i) => (
+            <a
+              href={`/proyecto/${p.id}`}
+              class={`project-item reveal reveal-delay-${(i % 3) + 1}`}
+              data-category={p.cat || ""}
+            >
+              <div class="project-img-box">
+                <img
+                  src={p.ruta_imagen || "/placeholder.jpg"}
+                  alt={p.titulo}
+                  loading="lazy"
+                />
+              </div>
+              <span class="project-cat">{p.cat || "DISEÑO"}</span>
+              <h3 class="project-title">{p.titulo}</h3>
+            </a>
+          ))
+        }
+      </div>
+    </main>
+
+    <!-- ── CTA SECTION ───────────────────────────── -->
+    <section
+      style="background: var(--cream-deep); padding: 100px 0; text-align: center;"
+    >
+      <div class="container">
+        <p class="section-label reveal" style="justify-content: center;">
+          {cta.subtitulo}
+        </p>
+        <h2 class="section-title reveal reveal-delay-1" set:html={cta.titulo} />
+        <p
+          style="color: var(--warm-gray); font-size: 0.88rem; margin: 20px auto 40px; max-width: 440px; line-height: 1.9;"
+          class="reveal reveal-delay-2"
+        >
+          {cta.descripcion}
+        </p>
+        <a
+          href={normalizarUrl(cta.url_boton)}
+          class="btn-primary reveal reveal-delay-3"
+          style="display: inline-flex;"
+        >
+          <span>{cta.texto_boton}</span>
+        </a>
+      </div>
+    </section>
+
+    <Footer />
+
+    <script>
+      // Navbar scroll
+      const navbar = document.getElementById("navbar");
+      window.addEventListener("scroll", () => {
+        navbar?.classList.toggle("scrolled", window.scrollY > 40);
+      });
+
+      // Reveal on scroll
+      const observer = new IntersectionObserver(
+        (entries) =>
+          entries.forEach(
+            (e) => e.isIntersecting && e.target.classList.add("active"),
+          ),
+        { threshold: 0.08, rootMargin: "0px 0px -30px 0px" },
+      );
+      document
+        .querySelectorAll(".reveal")
+        .forEach((el) => observer.observe(el));
+
+      // Category filter
+      const filterBtns =
+        document.querySelectorAll<HTMLButtonElement>(".filter-btn");
+      const items =
+        document.querySelectorAll<HTMLAnchorElement>(".project-item");
+
+      filterBtns.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          filterBtns.forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+
+          const filter = btn.dataset.filter;
+
+          items.forEach((item) => {
+            const show = filter === "all" || item.dataset.category === filter;
+            item.style.opacity = "0";
+            item.style.transform = "translateY(20px)";
+
+            setTimeout(() => {
+              item.style.display = show ? "block" : "none";
+              if (show) {
+                requestAnimationFrame(() => {
+                  item.style.opacity = "1";
+                  item.style.transform = "translateY(0)";
+                });
+              }
+            }, 200);
+          });
+        });
+      });
+
+      // Smooth item transitions
+      items.forEach((item) => {
+        item.style.transition = "opacity 0.5s ease, transform 0.5s ease";
+      });
+    </script>
+  </body>
+</html>

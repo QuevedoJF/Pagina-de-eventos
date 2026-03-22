@@ -1,0 +1,85 @@
+---
+import sql from "../lib/db.js";
+import "../styles/login.css";
+
+let error = "";
+
+// Esta parte se ejecuta cuando presionas el botón "Ingresar"
+if (Astro.request.method === "POST") {
+  try {
+    const data = await Astro.request.formData();
+
+    // Forzamos a que sea un texto (String) pase lo que pase para evitar el error de TypeScript
+    const user = String(data.get("username") || "");
+    const pass = String(data.get("password") || "");
+
+    // Buscamos a Zuri en la tabla de Navicat
+    const admin = await sql`
+      SELECT * FROM administradores 
+      WHERE username = ${user} AND password_hash = ${pass}
+    `;
+
+    if (admin.length > 0) {
+      // Si existe y la contraseña es correcta, la mandamos al panel de administración
+      return Astro.redirect("/admin");
+    } else {
+      error = "Usuario o contraseña incorrectos";
+    }
+  } catch (e) {
+    error = "Error de conexión con la base de datos";
+    console.error(e);
+  }
+}
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Acceso Restringido | Vino & Arena</title>
+  </head>
+  <body>
+    <div class="login-wrapper">
+      <div class="login-card">
+        <div class="login-header">
+          <h1>Vino & Arena</h1>
+          <div class="alert-box">
+            <span>ACCESO RESTRINGIDO: SOLO ZURI</span>
+          </div>
+        </div>
+
+        {
+          error && (
+            <p style="color: #7A0016; text-align: center; font-weight: bold; margin-bottom: 15px;">
+              {error}
+            </p>
+          )
+        }
+
+        <form method="POST" enctype="multipart/form-data" class="login-form">
+          <div class="form-group">
+            <label>Usuario</label>
+            <input
+              type="text"
+              name="username"
+              required
+              placeholder="Ingresa tu usuario"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Contraseña</label>
+            <input
+              type="password"
+              name="password"
+              required
+              placeholder="Ingresa tu contraseña"
+            />
+          </div>
+
+          <button type="submit" class="btn-submit">Ingresar al Sistema</button>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>

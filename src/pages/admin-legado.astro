@@ -1,0 +1,297 @@
+---
+import sql from "../lib/db.js";
+import "../styles/admin.css";
+
+// 1. LÓGICA DE GUARDADO
+let saveError = "";
+let saveOk = false;
+
+if (Astro.request.method === "POST") {
+  try {
+    const data = await Astro.request.formData();
+    const titulo = String(data.get("titulo") || "");
+    const desc = String(data.get("descripcion") || "");
+    const p1 = String(data.get("punto_1") || "");
+    const p2 = String(data.get("punto_2") || "");
+    const p3 = String(data.get("punto_3") || "");
+    const p4 = String(data.get("punto_4") || "");
+    const url = String(data.get("url_boton") || "");
+    const img = String(data.get("imagen_base64") || "");
+    const badgeTitulo = String(data.get("badge_titulo") || "");
+    const badgeSub = String(data.get("badge_subtitulo") || "");
+
+    // Asegurar que las columnas existen antes de usarlas
+    await sql`
+      ALTER TABLE seccion_legado 
+      ADD COLUMN IF NOT EXISTS badge_titulo TEXT DEFAULT 'V & A'
+    `;
+    await sql`
+      ALTER TABLE seccion_legado 
+      ADD COLUMN IF NOT EXISTS badge_subtitulo TEXT DEFAULT 'Legado de Elegancia Atemporal'
+    `;
+
+    await sql`
+      UPDATE seccion_legado 
+      SET titulo = ${titulo}, 
+          descripcion = ${desc}, 
+          punto_1 = ${p1}, 
+          punto_2 = ${p2}, 
+          punto_3 = ${p3}, 
+          punto_4 = ${p4}, 
+          url_boton = ${url},
+          badge_titulo = ${badgeTitulo},
+          badge_subtitulo = ${badgeSub},
+          ruta_imagen = ${img !== "" ? img : sql`ruta_imagen`}
+      WHERE id = 1
+    `;
+
+    return Astro.redirect("/admin-legado?ok=1");
+  } catch (e: any) {
+    console.error(e);
+    saveError = e?.message || "Error al guardar";
+  }
+}
+
+const showOk = Astro.url.searchParams.get("ok") === "1";
+
+// 2. OBTENER DATOS ACTUALES
+const datosReq = await sql`SELECT * FROM seccion_legado WHERE id = 1`;
+const d = datosReq[0];
+---
+
+<!doctype html>
+<html lang="es">
+  <head><meta charset="UTF-8" /><title>Admin Legado | Vino & Arena</title></head
+  >
+  <body style="background-color: #f9f8f4;">
+    <div class="admin-layout">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h1 class="admin-logo">Admin Panel</h1>
+        </div>
+        <nav class="sidebar-nav">
+          <a href="/admin">Portafolio</a>
+          <a href="/admin-nosotros">Sobre Nosotros</a>
+          <a href="/admin-servicios">Servicios</a>
+          <a href="/admin-legado" class="active">Sección Legado</a>
+          <a href="/admin-corporativo">Corporativo</a>
+          <a href="/admin-cta">Sección Contacto</a>
+        </nav>
+      </aside>
+
+      <main class="main-content">
+        <header class="content-header">
+          <h2 style="font-family: 'Playfair Display', serif; font-size: 2rem;">
+            Editar Sección Legado
+          </h2>
+          {
+            showOk && (
+              <div style="margin-top: 16px; background: #e6f4ea; border: 1px solid #4caf50; color: #2e7d32; padding: 12px 20px; border-radius: 6px; font-size: 0.88rem; display: flex; align-items: center; gap: 10px;">
+                ✓ Cambios guardados correctamente
+              </div>
+            )
+          }
+          {
+            saveError && (
+              <div style="margin-top: 16px; background: #fdecea; border: 1px solid #f44336; color: #c62828; padding: 12px 20px; border-radius: 6px; font-size: 0.85rem;">
+                <strong>Error al guardar:</strong> {saveError}
+              </div>
+            )
+          }
+        </header>
+
+        <form method="POST" class="admin-form">
+          <input type="hidden" name="imagen_base64" id="field-img-base64" />
+
+          <div class="editor-layout" style="grid-template-columns: 1fr 350px;">
+            <div class="editor-main">
+              <!-- CONTENIDO PRINCIPAL -->
+              <div class="editor-card">
+                <h3>Contenido Principal</h3>
+                <div class="form-group">
+                  <label>Título de la Sección</label>
+                  <input type="text" name="titulo" value={d.titulo} required />
+                </div>
+                <div class="form-group">
+                  <label>Descripción Párrafo</label>
+                  <textarea name="descripcion" rows="4" required
+                    >{d.descripcion}</textarea
+                  >
+                </div>
+
+                <h3 style="margin-top: 30px;">Puntos de la Lista (Checks)</h3>
+                <div
+                  style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;"
+                >
+                  <div class="form-group">
+                    <label>Punto 1</label>
+                    <input type="text" name="punto_1" value={d.punto_1} />
+                  </div>
+                  <div class="form-group">
+                    <label>Punto 2</label>
+                    <input type="text" name="punto_2" value={d.punto_2} />
+                  </div>
+                  <div class="form-group">
+                    <label>Punto 3</label>
+                    <input type="text" name="punto_3" value={d.punto_3} />
+                  </div>
+                  <div class="form-group">
+                    <label>Punto 4</label>
+                    <input type="text" name="punto_4" value={d.punto_4} />
+                  </div>
+                </div>
+              </div>
+
+              <!-- BADGE SOBRE LA IMAGEN -->
+              <div class="editor-card" style="margin-top: 24px;">
+                <h3>Card sobre la Imagen</h3>
+                <p
+                  style="font-size: 0.82rem; color: #999; margin-bottom: 20px;"
+                >
+                  Texto del recuadro que aparece en la esquina inferior
+                  izquierda de la foto.
+                </p>
+                <div
+                  style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;"
+                >
+                  <div class="form-group">
+                    <label>Título del Card (ej: V & A)</label>
+                    <input
+                      type="text"
+                      name="badge_titulo"
+                      value={d.badge_titulo || "V & A"}
+                      placeholder="V & A"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label>Subtítulo del Card</label>
+                    <input
+                      type="text"
+                      name="badge_subtitulo"
+                      value={d.badge_subtitulo ||
+                        "Legado de Elegancia Atemporal"}
+                      placeholder="Legado de Elegancia Atemporal"
+                    />
+                  </div>
+                </div>
+
+                <!-- Preview del badge -->
+                <div
+                  style="margin-top: 16px; background: #1a1a2e; border-radius: 8px; padding: 20px; display: flex; align-items: flex-end; min-height: 120px; position: relative; overflow: hidden;"
+                >
+                  <div
+                    style="background: rgba(255,255,255,0.08); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.15); padding: 16px 22px;"
+                  >
+                    <div
+                      id="preview-badge-titulo"
+                      style="font-family: 'Playfair Display', serif; font-size: 1.3rem; color: white; font-style: italic; letter-spacing: 2px; margin-bottom: 6px;"
+                    >
+                      {d.badge_titulo || "V & A"}
+                    </div>
+                    <div
+                      id="preview-badge-sub"
+                      style="font-size: 0.6rem; letter-spacing: 4px; text-transform: uppercase; color: rgba(255,255,255,0.5);"
+                    >
+                      {d.badge_subtitulo || "Legado de Elegancia Atemporal"}
+                    </div>
+                  </div>
+                  <span
+                    style="position: absolute; top: 10px; right: 14px; font-size: 0.6rem; color: rgba(255,255,255,0.2); letter-spacing: 2px; text-transform: uppercase;"
+                    >Preview</span
+                  >
+                </div>
+              </div>
+            </div>
+
+            <div class="editor-sidebar">
+              <!-- IMAGEN -->
+              <div class="editor-card">
+                <h3>Imagen Destacada</h3>
+                <div
+                  id="img-preview"
+                  style={`width: 100%; height: 200px; background-image: url(${d.ruta_imagen || ""}); background-size: cover; background-position: center; border-radius: 8px; margin-bottom: 15px; background-color: #eee;`}
+                >
+                </div>
+                <input type="file" id="file-input" accept="image/*" />
+              </div>
+
+              <!-- BOTÓN -->
+              <div class="editor-card">
+                <h3>Acción del Botón</h3>
+                <div class="form-group">
+                  <label>Enlace del Botón</label>
+                  <input
+                    type="text"
+                    name="url_boton"
+                    value={d.url_boton}
+                    placeholder="https://wa.me/529931072419"
+                  />
+                  <small
+                    style="color: #aaa; font-size: 0.75rem; margin-top: 6px; display: block;"
+                  >
+                    WhatsApp: <code>https://wa.me/52XXXXXXXXXX</code> &nbsp;|&nbsp;
+                    Tel: <code>tel:9931072419</code> &nbsp;|&nbsp; Email: <code
+                      >mailto:correo@ejemplo.com</code
+                    >
+                  </small>
+                </div>
+                <button
+                  type="submit"
+                  class="btn-publish"
+                  style="width: 100%; margin-top: 20px;"
+                >
+                  GUARDAR CAMBIOS
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </main>
+    </div>
+
+    <script>
+      // Imagen preview
+      const imgInput = document.getElementById(
+        "file-input",
+      ) as HTMLInputElement;
+      const hiddenImg = document.getElementById(
+        "field-img-base64",
+      ) as HTMLInputElement;
+      const imgPreview = document.getElementById("img-preview") as HTMLElement;
+
+      imgInput?.addEventListener("change", (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const base64 = event.target?.result as string;
+            hiddenImg.value = base64;
+            imgPreview.style.backgroundImage = `url(${base64})`;
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      // Badge live preview
+      const badgeTituloInput = document.querySelector<HTMLInputElement>(
+        'input[name="badge_titulo"]',
+      );
+      const badgeSubInput = document.querySelector<HTMLInputElement>(
+        'input[name="badge_subtitulo"]',
+      );
+      const previewTitulo = document.getElementById("preview-badge-titulo");
+      const previewSub = document.getElementById("preview-badge-sub");
+
+      badgeTituloInput?.addEventListener("input", () => {
+        if (previewTitulo)
+          previewTitulo.textContent = badgeTituloInput.value || "V & A";
+      });
+
+      badgeSubInput?.addEventListener("input", () => {
+        if (previewSub)
+          previewSub.textContent =
+            badgeSubInput.value || "Legado de Elegancia Atemporal";
+      });
+    </script>
+  </body>
+</html>

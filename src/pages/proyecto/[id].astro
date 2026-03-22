@@ -1,0 +1,161 @@
+---
+import sql from "../../lib/db.js";
+
+// 1. Obtenemos el ID de la URL
+const { id } = Astro.params;
+
+// CORRECCIÓN: Forzamos a que sea un Número para que TypeScript no se queje
+const proyectoId = Number(id);
+
+// 2. Buscamos toda la información de ese proyecto usando el proyectoId
+const projectData = await sql`
+  SELECT p.*, c.nombre as categoria_nombre
+  FROM proyectos p
+  LEFT JOIN categorias c ON p.categoria_id = c.id
+  WHERE p.id = ${proyectoId}
+`;
+
+// Si alguien escribe un ID que no existe, lo regresamos al inicio
+if (projectData.length === 0) {
+  return Astro.redirect("/");
+}
+
+const proyecto = projectData[0];
+
+// 3. Traemos TODAS las imágenes de este proyecto usando el proyectoId
+const imagenes = await sql`
+  SELECT ruta_imagen, es_portada
+  FROM proyecto_imagenes
+  WHERE proyecto_id = ${proyectoId}
+  ORDER BY orden ASC
+`;
+
+const portada =
+  imagenes.find((img) => img.es_portada)?.ruta_imagen ||
+  "https://via.placeholder.com/1200x600";
+const galeria = imagenes.filter((img) => !img.es_portada);
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{proyecto.titulo} | Vino & Arena</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lato:wght@300;400&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --wine: #7a0016;
+        --bg-color: #faf9f6;
+        --font-heading: "Playfair Display", serif;
+        --font-body: "Lato", sans-serif;
+      }
+      body {
+        font-family: var(--font-body);
+        background-color: var(--bg-color);
+        margin: 0;
+        color: #333;
+      }
+      .navbar {
+        padding: 20px 50px;
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px solid #eaeaea;
+      }
+      .navbar a {
+        text-decoration: none;
+        color: var(--wine);
+        font-weight: bold;
+        font-family: var(--font-heading);
+        font-size: 1.2rem;
+      }
+
+      .hero-proyecto {
+        width: 100%;
+        height: 60vh;
+        background-size: cover;
+        background-position: center;
+        position: relative;
+      }
+
+      .contenedor {
+        max-width: 900px;
+        margin: -80px auto 50px auto;
+        padding: 40px;
+        background: white;
+        position: relative;
+        z-index: 10;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+      }
+      .categoria {
+        color: var(--wine);
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 2px;
+      }
+      .titulo {
+        font-family: var(--font-heading);
+        font-size: 3rem;
+        margin: 10px 0 30px 0;
+        color: #111;
+      }
+      .descripcion {
+        font-size: 1.1rem;
+        line-height: 1.8;
+        color: #555;
+        white-space: pre-wrap;
+      }
+
+      .galeria {
+        max-width: 1200px;
+        margin: 50px auto;
+        padding: 0 20px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+      }
+      .foto-galeria {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: cover;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar">
+      <a href="/">&larr; Volver al inicio</a>
+      <span
+        style="font-family: var(--font-heading); color: var(--wine); font-size: 1.5rem;"
+        >Vino & Arena</span
+      >
+    </nav>
+
+    <div class="hero-proyecto" style={`background-image: url(${portada});`}>
+    </div>
+
+    <div class="contenedor">
+      <span class="categoria">{proyecto.categoria_nombre || "Exclusivo"}</span>
+      <h1 class="titulo">{proyecto.titulo}</h1>
+      <div class="descripcion">{proyecto.descripcion}</div>
+    </div>
+
+    {
+      galeria.length > 0 && (
+        <div class="galeria">
+          {galeria.map((img) => (
+            <img
+              src={img.ruta_imagen}
+              alt={`Foto de ${proyecto.titulo}`}
+              class="foto-galeria"
+            />
+          ))}
+        </div>
+      )
+    }
+  </body>
+</html>

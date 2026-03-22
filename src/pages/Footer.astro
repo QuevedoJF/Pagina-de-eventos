@@ -1,0 +1,84 @@
+---
+import sql from "../lib/db.js";
+import "../styles/footer.css";
+
+// Obtenemos toda la configuración (redes, legales y teléfono)
+const configReq = await sql`SELECT * FROM configuracion_empresa LIMIT 1`;
+const config = configReq[0] || {
+  url_facebook: "#",
+  url_instagram: "#",
+  url_x: "#",
+  url_contacto: "",
+};
+---
+
+<footer class="site-footer">
+  <div class="contenedor footer-container">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <h2>LuxeEvents</h2>
+        <p>
+          Curaduría de atmósferas y diseño de eventos premium con enfoque
+          editorial.
+        </p>
+      </div>
+
+      <div class="footer-links">
+        <div class="link-column">
+          <h3>SOCIAL</h3>
+          <a
+            href={config.url_instagram || "#"}
+            target="_blank"
+            rel="noopener noreferrer">Instagram</a
+          >
+          <a
+            href={config.url_facebook || "#"}
+            target="_blank"
+            rel="noopener noreferrer">Facebook</a
+          >
+          <a
+            href={config.url_x || "#"}
+            target="_blank"
+            rel="noopener noreferrer">X</a
+          >
+        </div>
+        <div class="link-column">
+          <h3>ESTUDIO</h3>
+          <a href="/privacidad">Privacidad</a>
+          <a href="/terminos">Términos</a>
+          <a href={`tel:${config.url_contacto || ""}`}>Contacto</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p style="display: flex; align-items: center;">
+        &copy; 2026 Atmospheric Editorial Events. Todos los derechos reservados.
+        <a href="/login" class="login-ghost-link">Panel</a>
+      </p>
+      <div class="eco-badge">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="#7a0016">
+          <path
+            d="M17.5,2.5c-3.5,0-8.5,2-11.5,6.5C3,13.5,2,21.5,2,21.5s8-1,12.5-4c4.5-3,6.5-8,6.5-11.5C21,2.5,17.5,2.5,17.5,2.5z"
+          ></path>
+        </svg>
+        <span>SERVICIOS DE DECORACION</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .login-ghost-link {
+    color: inherit;
+    text-decoration: none;
+    opacity: 0.2; /* Discreto pero visible si se busca */
+    margin-left: 15px;
+    font-size: 0.8rem;
+    transition: all 0.3s ease;
+  }
+  .login-ghost-link:hover {
+    opacity: 1;
+    color: #7a0016;
+  }
+</style>

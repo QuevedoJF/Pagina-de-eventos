@@ -1,0 +1,264 @@
+---
+import sql from "../lib/db.js";
+import "../styles/admin.css";
+
+// 1. LÓGICA DE GUARDAR Y ELIMINAR
+if (Astro.request.method === "POST") {
+  try {
+    const data = await Astro.request.formData();
+    const action = String(data.get("action") || "");
+
+    if (action === "delete") {
+      const id = Number(data.get("proyecto_id"));
+      await sql`DELETE FROM proyectos WHERE id = ${id}`;
+    } else if (action === "create") {
+      const titulo = String(data.get("titulo") || "");
+      const categoria = String(data.get("categoria") || "");
+      const descripcion = String(data.get("descripcion") || "");
+      const imagenesBase64 = String(data.get("imagenes_base64") || "[]");
+
+      const catRecord =
+        await sql`SELECT id FROM categorias WHERE nombre = ${categoria} LIMIT 1`;
+      const categoria_id = catRecord.length > 0 ? catRecord[0].id : null;
+
+      const nuevoProyecto = await sql`
+        INSERT INTO proyectos (titulo, categoria_id, descripcion, estado)
+        VALUES (${titulo}, ${categoria_id}, ${descripcion}, 'Publicado')
+        RETURNING id
+      `;
+      const proyecto_id = nuevoProyecto[0].id;
+
+      const imagenes = JSON.parse(imagenesBase64);
+      for (let i = 0; i < imagenes.length; i++) {
+        const esPortada = i === 0;
+        await sql`
+          INSERT INTO proyecto_imagenes (proyecto_id, ruta_imagen, es_portada, orden)
+          VALUES (${proyecto_id}, ${imagenes[i]}, ${esPortada}, ${i})
+        `;
+      }
+    }
+
+    // ⭐ ESTA ES LA LÍNEA MÁGICA QUE SOLUCIONA EL ERROR ⭐
+    // Obliga al navegador a "limpiar" la memoria recargando la página desde cero
+    return Astro.redirect("/admin");
+  } catch (error) {
+    console.error("Error en la base de datos:", error);
+  }
+}
+
+// 2. LECTURA DE DATOS PARA EL PANEL
+const proyectos = await sql`
+  SELECT p.id, p.titulo, p.descripcion, c.nombre as categoria_nombre, i.ruta_imagen
+  FROM proyectos p
+  LEFT JOIN categorias c ON p.categoria_id = c.id
+  LEFT JOIN proyecto_imagenes i ON p.id = i.proyecto_id AND i.es_portada = true
+  ORDER BY p.creado_en DESC
+`;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Panel de Gestión | Vino & Arena</title>
+  </head>
+  <body>
+    <div class="admin-layout">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h1 class="admin-logo">Vino & Arena</h1>
+          <span class="admin-subtitle">GESTIÓN DE PRODUCTO</span>
+        </div>
+        <nav class="sidebar-nav">
+          <a href="/admin" class="active">Portafolio</a>
+          <a href="/admin-nosotros">Sobre Nosotros</a>
+          <a href="/admin-servicios">Servicios</a>
+          <a href="/admin-corporativo">Corporativo</a>
+          <a href="/admin-legado">Contactanos</a>
+          <a href="/admin-cta">cuentanos tu vision</a>
+        </nav>
+        <div class="sidebar-action">
+          <button class="btn-nuevo" id="openModal">+ AÑADIR NUEVO</button>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="content-header">
+          <h2>
+            Inventario de Proyectos <span class="count"
+              >{proyectos.length} Eventos</span
+            >
+          </h2>
+        </header>
+
+        <div class="projects-grid">
+          {
+            proyectos.map((p) => (
+              <div class="project-card">
+                <div
+                  class="project-img"
+                  style={`background-image: url(${p.ruta_imagen || "https://via.placeholder.com/600"});`}
+                />
+                <div class="project-info">
+                  <span class="tag">
+                    {p.categoria_nombre || "Sin Categoría"}
+                  </span>
+                  <h3>{p.titulo}</h3>
+                  <p>{p.descripcion.substring(0, 60)}...</p>
+                  <div
+                    class="card-actions"
+                    style="display: flex; gap: 10px; margin-top: 15px;"
+                  >
+                    <button
+                      class="btn-edit"
+                      style="flex: 1; padding: 8px; border: 1px solid #7A0016; color: #7A0016; background: transparent; cursor: pointer; border-radius: 4px;"
+                    >
+                      Editar
+                    </button>
+
+                    <form
+                      method="POST"
+                      onsubmit="return confirm('¿Seguro que deseas eliminar este evento permanentemente?');"
+                      style="flex: 1; margin: 0;"
+                    >
+                      <input type="hidden" name="action" value="delete" />
+                      <input type="hidden" name="proyecto_id" value={p.id} />
+                      <button
+                        type="submit"
+                        class="btn-delete"
+                        style="width: 100%; padding: 8px; border: 1px solid #ccc; background: transparent; cursor: pointer; border-radius: 4px; color: #333;"
+                      >
+                        Eliminar
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            ))
+          }
+        </div>
+      </main>
+    </div>
+
+    <div id="modal-proyecto" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Detalles del Proyecto</h3>
+          <button type="button" class="btn-close" id="closeModal"
+            >&times;</button
+          >
+        </div>
+
+        <form method="POST" class="admin-form" id="projectForm">
+          <input type="hidden" name="action" value="create" />
+
+          <div class="form-group">
+            <label>Título del Proyecto</label>
+            <input
+              type="text"
+              name="titulo"
+              required
+              placeholder="Ej: Gala Esmeralda 2024"
+            />
+          </div>
+          <div class="form-group">
+            <label>Categoría</label>
+            <select name="categoria" required>
+              <option value="Bodas de Autor">Bodas de Autor</option>
+              <option value="Corporativo">Corporativo</option>
+              <option value="Gala en Exterior">Gala en Exterior</option>
+              <option value="Fiestas Temáticas">Fiestas Temáticas</option>
+              <option value="Lanzamiento">Lanzamiento</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Descripción del Evento</label>
+            <textarea
+              name="descripcion"
+              rows="4"
+              required
+              placeholder="Describe la atmósfera..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Galería de Fotos (La primera será portada)</label>
+            <div class="file-upload">
+              <span>Haz clic para seleccionar fotos</span>
+              <input type="file" id="projImages" multiple accept="image/*" />
+            </div>
+            <div class="gallery-preview" id="galleryPreview"></div>
+          </div>
+
+          <input
+            type="hidden"
+            name="imagenes_base64"
+            id="imagenes_base64"
+            value="[]"
+          />
+
+          <div class="form-actions">
+            <button type="submit" class="btn-save">Guardar Proyecto</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      // Le decimos a TypeScript exactamente qué tipo de elemento es cada uno
+      const modal = document.getElementById("modal-proyecto") as HTMLElement;
+      const openBtn = document.getElementById("openModal") as HTMLButtonElement;
+      const closeBtn = document.getElementById(
+        "closeModal",
+      ) as HTMLButtonElement;
+      const imageInput = document.getElementById(
+        "projImages",
+      ) as HTMLInputElement;
+      const previewContainer = document.getElementById(
+        "galleryPreview",
+      ) as HTMLElement;
+      const hiddenImagesInput = document.getElementById(
+        "imagenes_base64",
+      ) as HTMLInputElement;
+
+      let selectedImages: string[] = [];
+
+      openBtn?.addEventListener("click", () => {
+        modal.style.display = "flex";
+      });
+      closeBtn?.addEventListener("click", () => {
+        modal.style.display = "none";
+      });
+
+      imageInput?.addEventListener("change", (e: Event) => {
+        if (previewContainer) previewContainer.innerHTML = "";
+        selectedImages = [];
+
+        const target = e.target as HTMLInputElement;
+        const files = target.files;
+
+        if (files) {
+          Array.from(files).forEach((file: File) => {
+            const reader = new FileReader();
+            reader.onload = (event: ProgressEvent<FileReader>) => {
+              const result = event.target?.result as string;
+
+              if (result) {
+                selectedImages.push(result);
+                if (hiddenImagesInput)
+                  hiddenImagesInput.value = JSON.stringify(selectedImages);
+
+                if (previewContainer) {
+                  const img = document.createElement("div");
+                  img.className = "preview-item";
+                  img.style.backgroundImage = `url(${result})`;
+                  img.style.backgroundSize = "cover";
+                  previewContainer.appendChild(img);
+                }
+              }
+            };
+            reader.readAsDataURL(file);
+          });
+        }
+      });
+    </script>
+  </body>
+</html>
