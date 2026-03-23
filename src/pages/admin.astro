@@ -17,7 +17,8 @@ if (Astro.request.method === "POST") {
       const descripcion = String(data.get("descripcion") || "");
       const imagenesBase64 = String(data.get("imagenes_base64") || "[]");
 
-      const catRecord = await sql`SELECT id FROM categorias WHERE nombre = ${categoria} LIMIT 1`;
+      const catRecord =
+        await sql`SELECT id FROM categorias WHERE nombre = ${categoria} LIMIT 1`;
       const categoria_id = catRecord.length > 0 ? catRecord[0].id : null;
 
       const nuevoProyecto = await sql`
@@ -49,29 +50,37 @@ const proyectos = await sql`
   LEFT JOIN proyecto_imagenes i ON p.id = i.proyecto_id AND i.es_portada = true
   ORDER BY p.creado_en DESC
 `;
+
+// ✅ Categorías dinámicas desde BD
+const categorias = await sql`SELECT * FROM categorias ORDER BY nombre ASC`;
 ---
 
 <!doctype html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Panel de Gestión | Vino & Arena</title>
+    <title>Panel de Gestión | My love fest</title>
+    <link rel="icon" type="image/png" href="/Logo.png" />
   </head>
   <body>
     <div class="admin-layout">
       <aside class="sidebar">
         <div class="sidebar-header">
-          <h1 class="admin-logo">Admin Panel</h1>
+          <h1 class="admin-logo">My love fest</h1>
+          <span class="admin-subtitle">GESTIÓN DE EVENTOS</span>
         </div>
         <nav class="sidebar-nav">
           <a href="/admin" class="active">Portafolio</a>
-          <a href="/admin-hero" class="active">Principal</a>
-          <a href="/admin-nosotros" class="active">Sobre Nosotros</a>
-          <a href="/admin-servicios" class="active">Servicios</a>
-          <a href="/admin-legado" class="active">Sección Legado</a>
-          <a href="/admin-corporativo" class="active">Corporativo</a>
-          <a href="/admin-cta" class="active">cuentanos tu vision</a>
+          <a href="/admin-hero">Principal</a>
+          <a href="/admin-nosotros">Sobre Nosotros</a>
+          <a href="/admin-servicios">Servicios</a>
+          <a href="/admin-legado">Sección Legado</a>
+          <a href="/admin-corporativo">Corporativo</a>
+          <a href="/">Salir de admin</a>
         </nav>
+        <div class="sidebar-action">
+          <button class="btn-nuevo" id="openModal">+ AÑADIR NUEVO</button>
+        </div>
       </aside>
 
       <main class="main-content">
@@ -83,47 +92,50 @@ const proyectos = await sql`
         </header>
 
         <div class="projects-grid">
-          {proyectos.map((p) => (
-            <div class="project-card">
-              <div
-                class="project-img"
-                style={`background-image: url(${p.ruta_imagen || "https://via.placeholder.com/600"});`}
-              />
-              <div class="project-info">
-                <span class="tag">{p.categoria_nombre || "Sin Categoría"}</span>
-                <h3>{p.titulo}</h3>
-                <p>{(p.descripcion || "").substring(0, 60)}...</p>
-                <div class="card-actions" style="display: flex; gap: 10px; margin-top: 15px;">
-
-                  <!-- ✅ BOTÓN EDITAR — ahora sí navega -->
-                  <a
-                    href={`/admin/editar/${p.id}`}
-                    class="btn-edit"
-                    style="flex: 1; padding: 8px; border: 1px solid #7A0016; color: #7A0016; background: transparent; cursor: pointer; border-radius: 4px; text-align: center; text-decoration: none; font-size: 0.9rem;"
+          {
+            proyectos.map((p: any) => (
+              <div class="project-card">
+                <div
+                  class="project-img"
+                  style={`background-image: url(${p.ruta_imagen || "https://via.placeholder.com/600"});`}
+                />
+                <div class="project-info">
+                  <span class="tag">
+                    {p.categoria_nombre || "Sin Categoría"}
+                  </span>
+                  <h3>{p.titulo}</h3>
+                  <p>{(p.descripcion || "").substring(0, 60)}...</p>
+                  <div
+                    class="card-actions"
+                    style="display: flex; gap: 10px; margin-top: 15px;"
                   >
-                    Editar
-                  </a>
-
-                  <form
-                    method="POST"
-                    onsubmit="return confirm('¿Seguro que deseas eliminar este evento permanentemente?');"
-                    style="flex: 1; margin: 0;"
-                  >
-                    <input type="hidden" name="action" value="delete" />
-                    <input type="hidden" name="proyecto_id" value={p.id} />
-                    <button
-                      type="submit"
-                      class="btn-delete"
-                      style="width: 100%; padding: 8px; border: 1px solid #ccc; background: transparent; cursor: pointer; border-radius: 4px; color: #333;"
+                    <a
+                      href={`/admin/editar/${p.id}`}
+                      class="btn-edit"
+                      style="flex: 1; padding: 8px; border: 1px solid #7A0016; color: #7A0016; background: transparent; cursor: pointer; border-radius: 4px; text-align: center; text-decoration: none; font-size: 0.9rem;"
                     >
-                      Eliminar
-                    </button>
-                  </form>
-
+                      Editar
+                    </a>
+                    <form
+                      method="POST"
+                      onsubmit="return confirm('¿Seguro que deseas eliminar este evento permanentemente?');"
+                      style="flex: 1; margin: 0;"
+                    >
+                      <input type="hidden" name="action" value="delete" />
+                      <input type="hidden" name="proyecto_id" value={p.id} />
+                      <button
+                        type="submit"
+                        class="btn-delete"
+                        style="width: 100%; padding: 8px; border: 1px solid #ccc; background: transparent; cursor: pointer; border-radius: 4px; color: #333;"
+                      >
+                        Eliminar
+                      </button>
+                    </form>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          }
         </div>
       </main>
     </div>
@@ -133,7 +145,9 @@ const proyectos = await sql`
       <div class="modal-content">
         <div class="modal-header">
           <h3>Nuevo Proyecto</h3>
-          <button type="button" class="btn-close" id="closeModal">&times;</button>
+          <button type="button" class="btn-close" id="closeModal"
+            >&times;</button
+          >
         </div>
 
         <form method="POST" class="admin-form" id="projectForm">
@@ -141,21 +155,34 @@ const proyectos = await sql`
 
           <div class="form-group">
             <label>Título del Proyecto</label>
-            <input type="text" name="titulo" required placeholder="Ej: Gala Esmeralda 2024" />
+            <input
+              type="text"
+              name="titulo"
+              required
+              placeholder="Ej: Gala Esmeralda 2024"
+            />
           </div>
+
+          <!-- ✅ Categorías dinámicas -->
           <div class="form-group">
             <label>Categoría</label>
             <select name="categoria" required>
-              <option value="Bodas de Autor">Bodas de Autor</option>
-              <option value="Corporativo">Corporativo</option>
-              <option value="Gala en Exterior">Gala en Exterior</option>
-              <option value="Fiestas Temáticas">Fiestas Temáticas</option>
-              <option value="Lanzamiento">Lanzamiento</option>
+              <option value="">Selecciona una categoría</option>
+              {
+                categorias.map((c: any) => (
+                  <option value={c.nombre}>{c.nombre}</option>
+                ))
+              }
             </select>
           </div>
+
           <div class="form-group">
             <label>Descripción del Evento</label>
-            <textarea name="descripcion" rows="4" required placeholder="Describe la atmósfera..."></textarea>
+            <textarea
+              name="descripcion"
+              rows="4"
+              required
+              placeholder="Describe la atmósfera..."></textarea>
           </div>
           <div class="form-group">
             <label>Fotos (la primera será portada)</label>
@@ -166,7 +193,12 @@ const proyectos = await sql`
             <div class="gallery-preview" id="galleryPreview"></div>
           </div>
 
-          <input type="hidden" name="imagenes_base64" id="imagenes_base64" value="[]" />
+          <input
+            type="hidden"
+            name="imagenes_base64"
+            id="imagenes_base64"
+            value="[]"
+          />
 
           <div class="form-actions">
             <button type="submit" class="btn-save">Guardar Proyecto</button>
@@ -176,17 +208,29 @@ const proyectos = await sql`
     </div>
 
     <script>
-      const modal     = document.getElementById("modal-proyecto") as HTMLElement;
-      const openBtn   = document.getElementById("openModal") as HTMLButtonElement;
-      const closeBtn  = document.getElementById("closeModal") as HTMLButtonElement;
-      const imageInput = document.getElementById("projImages") as HTMLInputElement;
-      const previewContainer = document.getElementById("galleryPreview") as HTMLElement;
-      const hiddenImagesInput = document.getElementById("imagenes_base64") as HTMLInputElement;
+      const modal = document.getElementById("modal-proyecto") as HTMLElement;
+      const openBtn = document.getElementById("openModal") as HTMLButtonElement;
+      const closeBtn = document.getElementById(
+        "closeModal",
+      ) as HTMLButtonElement;
+      const imageInput = document.getElementById(
+        "projImages",
+      ) as HTMLInputElement;
+      const previewContainer = document.getElementById(
+        "galleryPreview",
+      ) as HTMLElement;
+      const hiddenImagesInput = document.getElementById(
+        "imagenes_base64",
+      ) as HTMLInputElement;
 
       let selectedImages: string[] = [];
 
-      openBtn?.addEventListener("click", () => { modal.style.display = "flex"; });
-      closeBtn?.addEventListener("click", () => { modal.style.display = "none"; });
+      openBtn?.addEventListener("click", () => {
+        modal.style.display = "flex";
+      });
+      closeBtn?.addEventListener("click", () => {
+        modal.style.display = "none";
+      });
 
       imageInput?.addEventListener("change", (e: Event) => {
         previewContainer.innerHTML = "";

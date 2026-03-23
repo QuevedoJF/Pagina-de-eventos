@@ -4,7 +4,12 @@ import "../styles/index.css";
 import Footer from "./Footer.astro";
 
 const identidadReq = await sql`SELECT * FROM identidad_marca LIMIT 1`;
-const iden = identidadReq[0] || { cronica: "", mision: "", vision: "" };
+const iden = identidadReq[0] || {
+  cronica: "",
+  mision: "",
+  vision: "",
+  ruta_imagen: "",
+};
 
 // Hero
 await sql`
@@ -53,6 +58,7 @@ const proyectos = await sql`
   ORDER BY p.creado_en DESC 
   LIMIT 3
 `;
+
 const legadoReq = await sql`SELECT * FROM seccion_legado WHERE id = 1`;
 const legado = legadoReq[0] || {
   titulo: "Un Legado de Elegancia Atemporal.",
@@ -90,14 +96,14 @@ function normalizarUrl(url: string): string {
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vino & Arena | Diseño y Curaduría de Eventos</title>
+    <title>My love FEST</title>
     <meta
       name="description"
       content="Diseñamos entornos de lujo donde la estética impecable se encuentra con la emoción genuina."
     />
+    <link rel="icon" type="image/png" href="/Logo.png" />
   </head>
   <body>
-    <!-- ── NAVBAR ─────────────────────────────── -->
     <nav class="navbar" id="navbar">
       <a href="/" class="logo">{hero.logo || "Vino & Arena"}</a>
       <ul class="nav-links">
@@ -109,7 +115,6 @@ function normalizarUrl(url: string): string {
       <a href="/proyectos" class="nav-cta">Colección</a>
     </nav>
 
-    <!-- ── HERO ───────────────────────────────── -->
     <header class="hero container">
       <div class="hero-content">
         <div class="hero-eyebrow reveal">
@@ -121,13 +126,9 @@ function normalizarUrl(url: string): string {
             hero.titulo_normal2 || "que Inspiran el Alma."
           }
         </h1>
-        <p class="hero-subtitle reveal reveal-delay-2">
-          {hero.descripcion}
-        </p>
+        <p class="hero-subtitle reveal reveal-delay-2">{hero.descripcion}</p>
         <div class="hero-actions reveal reveal-delay-3">
-          <a href="#contacto" class="btn-primary">
-            <span>Reservar Cita</span>
-          </a>
+          <a href="#contacto" class="btn-primary"><span>Reservar Cita</span></a>
           <a href="/proyectos" class="btn-ghost">Ver Portafolio →</a>
         </div>
       </div>
@@ -148,13 +149,14 @@ function normalizarUrl(url: string): string {
       </div>
     </header>
 
-    <!-- ── LA FIRMA ─────────────────────────────── -->
     <section id="firma" class="firma-section">
       <div class="container">
         <div class="firma-grid">
           <div class="firma-img-wrap reveal">
+            <!-- ✅ IMAGEN DINÁMICA DESDE BD -->
             <img
-              src="https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=2069"
+              src={iden.ruta_imagen ||
+                "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=2069"}
               alt="Nuestra Firma"
             />
           </div>
@@ -181,7 +183,6 @@ function normalizarUrl(url: string): string {
       </div>
     </section>
 
-    <!-- ── EXPERIENCIAS ─────────────────────────── -->
     <section id="experiencias" class="experiencias-section">
       <div class="container">
         <div class="section-header reveal">
@@ -190,8 +191,7 @@ function normalizarUrl(url: string): string {
           </p>
           <h2 class="section-title">
             Experiencias <em style="font-style: italic; color: var(--wine);"
-              >Curadas</em
-            >
+              >Curadas</em>
           </h2>
           <p class="section-sub">
             Bodas de autor y eventos corporativos de alto nivel
@@ -207,21 +207,19 @@ function normalizarUrl(url: string): string {
                 <div class="card-overlay">
                   <h3>{s.titulo}</h3>
                   <p>{s.descripcion.substring(0, 110)}...</p>
-                  <div class="card-price">Desde ${s.precio_inicial} USD</div>
+                  <div class="card-price">Desde ${s.precio_inicial} MXN</div>
                 </div>
               </div>
             ))
           }
         </div>
 
-        <!-- ✅ BOTÓN VER TODOS LOS SERVICIOS -->
         <div style="text-align: center; margin-top: 60px;" class="reveal">
           <a href="/servicios" class="ver-todo">Ver todos los servicios →</a>
         </div>
       </div>
     </section>
 
-    <!-- ── ARCHIVO VISUAL ───────────────────────── -->
     <section id="archivo" class="archivo-section">
       <div class="container">
         <div class="archivo-header-row">
@@ -229,8 +227,7 @@ function normalizarUrl(url: string): string {
             <p class="section-label reveal">Visual Storytelling</p>
             <h2 class="section-title reveal reveal-delay-1">
               El Archivo <em style="font-style: italic; color: var(--wine);"
-                >Visual.</em
-              >
+                >Visual.</em>
             </h2>
             <p
               class="section-sub reveal reveal-delay-2"
@@ -276,7 +273,6 @@ function normalizarUrl(url: string): string {
       </div>
     </section>
 
-    <!-- ── LEGADO (CTA) ─────────────────────────── -->
     <section class="legado-section" id="contacto">
       <div class="container">
         <div class="legado-grid">
@@ -346,6 +342,30 @@ function normalizarUrl(url: string): string {
       document
         .querySelectorAll(".reveal")
         .forEach((el) => observer.observe(el));
+
+      const hamburger = document.getElementById("hamburger");
+      const mobileMenu = document.getElementById("mobileMenu");
+
+      function openMenu() {
+        hamburger?.classList.add("open");
+        mobileMenu?.classList.add("open");
+        document.body.style.overflow = "hidden";
+      }
+      function closeMenu() {
+        hamburger?.classList.remove("open");
+        mobileMenu?.classList.remove("open");
+        document.body.style.overflow = "";
+      }
+      hamburger?.addEventListener("click", () => {
+        if (hamburger.classList.contains("open")) closeMenu();
+        else openMenu();
+      });
+      document.querySelectorAll("[data-close]").forEach((link) => {
+        link.addEventListener("click", closeMenu);
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeMenu();
+      });
     </script>
   </body>
 </html>

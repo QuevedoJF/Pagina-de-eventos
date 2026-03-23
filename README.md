@@ -44,3 +44,38 @@ All commands are run from the root of the project, from a terminal:
 ## 👀 Want to learn more?
 
 Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+
+categorias base de datos
+globo número
+Eventos premiun
+Letras gigantes
+Sorpresas
+Baby
+Brillos
+pedidas de mano
+Graduacion
+Amor&Amistad
+Aniversario
+cajas especiales
+globos orbz
+Día del niño 
+boysgirls
+vasos
+navidad
+lets party neon
+fechasesp
+jars
+flores
+día del maestro
+día de las madres
+surprisebox
+flores
+burbujas
+carrito de shots
+día del padre
+globos latex
+Bodas
+mini set
+playeras
+14 de febrero
+teepen

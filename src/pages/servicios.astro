@@ -10,21 +10,21 @@ const servicios = await sql`
 `;
 ---
 
-<!doctype html>
+<!--  Esta es la pagina donde se ven todos los servicios en card --><!doctype html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Servicios | Vino & Arena</title>
+    <title>Servicios | My love fest</title>
     <meta
       name="description"
       content="Todos nuestros servicios de diseño y curaduría de eventos de lujo."
     />
+    <link rel="icon" type="image/png" href="/Logo.png" />
   </head>
   <body>
-    <!-- ── NAVBAR ─────────────────────────────── -->
     <nav class="navbar" id="navbar">
-      <a href="/" class="logo">Vino &amp; Arena</a>
+      <a href="/" class="logo">My love &amp; fest</a>
       <ul class="nav-links">
         <li><a href="/">Inicio</a></li>
         <li><a href="/#firma">La Firma</a></li>
@@ -34,7 +34,7 @@ const servicios = await sql`
     </nav>
 
     <!-- ── HEADER ─────────────────────────────── -->
-    <header class="gallery-header container">
+    <header class="gallery-header container" style="margin-top: 100px;">
       <p class="section-label reveal">Diseño y Producción de Élite</p>
       <h1 class="gallery-title reveal reveal-delay-1">
         Nuestros<br /><em>Servicios.</em>
@@ -58,7 +58,7 @@ const servicios = await sql`
               <div class="card-overlay">
                 <h3>{s.titulo}</h3>
                 <p>{s.descripcion.substring(0, 110)}...</p>
-                <div class="card-price">Desde ${s.precio_inicial} USD</div>
+                <div class="card-price">Desde ${s.precio_inicial} MXN</div>
               </div>
             </div>
           ))

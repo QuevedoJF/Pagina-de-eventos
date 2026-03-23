@@ -68,7 +68,8 @@ const showOk = Astro.url.searchParams.get("ok") === "1";
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Admin Hero | Vino & Arena</title>
+    <title>Admin principal | My love fest</title>
+    <link rel="icon" type="image/png" href="/Logo.png" />
   </head>
   <body style="background-color: #f9f8f4;">
     <div class="admin-layout">
@@ -77,20 +78,21 @@ const showOk = Astro.url.searchParams.get("ok") === "1";
           <h1 class="admin-logo">Admin Panel</h1>
         </div>
         <nav class="sidebar-nav">
-          <a href="/admin" class="active">Portafolio</a>
+          <a href="/admin">Portafolio</a>
           <a href="/admin-hero" class="active">Principal</a>
-          <a href="/admin-nosotros" class="active">Sobre Nosotros</a>
-          <a href="/admin-servicios" class="active">Servicios</a>
-          <a href="/admin-legado" class="active">Sección Legado</a>
-          <a href="/admin-corporativo" class="active">Corporativo</a>
-          <a href="/admin-cta" class="active">cuentanos tu vision</a>
+          <a href="/admin-nosotros">Sobre Nosotros</a>
+          <a href="/admin-servicios">Servicios</a>
+          <a href="/admin-legado">Sección Legado</a>
+          <a href="/admin-corporativo">Corporativo</a>
+          <a href="/admin-cta">cuentanos tu vision</a>
+          <a href="/">Salir de admin</a>
         </nav>
       </aside>
 
       <main class="main-content">
         <header class="content-header">
           <h2 style="font-family: 'Playfair Display', serif; font-size: 2rem;">
-            Editar Sección Hero
+            Editar Sección Principal
           </h2>
           <p style="color: #999; font-size: 0.85rem; margin-top: 6px;">
             La sección principal que ven los visitantes al entrar a la página.

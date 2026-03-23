@@ -2,12 +2,10 @@
 import sql from "../lib/db.js";
 import "../styles/admin.css";
 
-// 1. LÓGICA DE GUARDADO ROBUSTA
 if (Astro.request.method === "POST") {
   try {
     const data = await Astro.request.formData();
 
-    // Capturamos los datos del formulario
     const fb = String(data.get("facebook") || "");
     const ig = String(data.get("instagram") || "");
     const x = String(data.get("x") || "");
@@ -18,7 +16,6 @@ if (Astro.request.method === "POST") {
     const fechaAhora = new Date();
     const usuarioActivo = "Zuri (Administradora)";
 
-    // Intentamos actualizar el registro con ID 1
     const result = await sql`
       UPDATE configuracion_empresa 
       SET url_facebook = ${fb}, 
@@ -33,7 +30,6 @@ if (Astro.request.method === "POST") {
       RETURNING id
     `;
 
-    // Si por alguna razón no se actualizó nada (tabla vacía), lo insertamos
     if (result.length === 0) {
       await sql`
         INSERT INTO configuracion_empresa 
@@ -77,7 +73,7 @@ const fechaFormateada = new Intl.DateTimeFormat("es-ES", {
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Gestión Corporativa | Vino & Arena</title>
+    <title>Gestión Corporativa | My love fest</title>
   </head>
   <body style="background-color: #f9f8f4;">
     <div class="admin-layout">
@@ -86,13 +82,14 @@ const fechaFormateada = new Intl.DateTimeFormat("es-ES", {
           <h1 class="admin-logo">Admin Panel</h1>
         </div>
         <nav class="sidebar-nav">
-          <a href="/admin" class="active">Portafolio</a>
-          <a href="/admin-hero" class="active">Principal</a>
-          <a href="/admin-nosotros" class="active">Sobre Nosotros</a>
-          <a href="/admin-servicios" class="active">Servicios</a>
-          <a href="/admin-legado" class="active">Sección Legado</a>
+          <a href="/admin">Portafolio</a>
+          <a href="/admin-hero">Principal</a>
+          <a href="/admin-nosotros">Sobre Nosotros</a>
+          <a href="/admin-servicios">Servicios</a>
+          <a href="/admin-legado">Sección Legado</a>
           <a href="/admin-corporativo" class="active">Corporativo</a>
-          <a href="/admin-cta" class="active">cuentanos tu vision</a>
+          <a href="/admin-cta">cuentanos tu vision</a>
+          <a href="/">Salir de admin</a>
         </nav>
       </aside>
 
