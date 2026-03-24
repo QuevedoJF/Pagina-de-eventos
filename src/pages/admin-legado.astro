@@ -29,6 +29,7 @@ if (Astro.request.method === "POST") {
       ADD COLUMN IF NOT EXISTS badge_subtitulo TEXT DEFAULT 'Legado de Elegancia Atemporal'
     `;
 
+    // Como ya confirmamos que el id = 1 existe, hacemos el UPDATE normal
     await sql`
       UPDATE seccion_legado 
       SET titulo = ${titulo}, 
@@ -55,7 +56,7 @@ const showOk = Astro.url.searchParams.get("ok") === "1";
 
 // 2. OBTENER DATOS ACTUALES
 const datosReq = await sql`SELECT * FROM seccion_legado WHERE id = 1`;
-// CORRECCIÓN: Si no hay datos, d será un objeto vacío en lugar de undefined
+// Red de seguridad: si no hay datos, d es un objeto vacío
 const d = datosReq[0] || {};
 ---
 
