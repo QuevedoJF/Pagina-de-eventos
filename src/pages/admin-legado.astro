@@ -55,13 +55,15 @@ const showOk = Astro.url.searchParams.get("ok") === "1";
 
 // 2. OBTENER DATOS ACTUALES
 const datosReq = await sql`SELECT * FROM seccion_legado WHERE id = 1`;
-const d = datosReq[0];
+// CORRECCIÓN: Si no hay datos, d será un objeto vacío en lugar de undefined
+const d = datosReq[0] || {};
 ---
 
 <!doctype html>
 <html lang="es">
-  <head
-    ><meta charset="UTF-8" /><title>Admin Legado | My love fest</title>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Admin Legado | My love fest</title>
     <link rel="icon" type="image/png" href="/Logo.png" />
   </head>
   <body style="background-color: #f9f8f4;">
@@ -108,17 +110,21 @@ const d = datosReq[0];
 
           <div class="editor-layout" style="grid-template-columns: 1fr 350px;">
             <div class="editor-main">
-              <!-- CONTENIDO PRINCIPAL -->
               <div class="editor-card">
                 <h3>Contenido Principal</h3>
                 <div class="form-group">
                   <label>Título de la Sección</label>
-                  <input type="text" name="titulo" value={d.titulo} required />
+                  <input
+                    type="text"
+                    name="titulo"
+                    value={d?.titulo || ""}
+                    required
+                  />
                 </div>
                 <div class="form-group">
                   <label>Descripción Párrafo</label>
                   <textarea name="descripcion" rows="4" required
-                    >{d.descripcion}</textarea
+                    >{d?.descripcion || ""}</textarea
                   >
                 </div>
 
@@ -128,24 +134,39 @@ const d = datosReq[0];
                 >
                   <div class="form-group">
                     <label>Punto 1</label>
-                    <input type="text" name="punto_1" value={d.punto_1} />
+                    <input
+                      type="text"
+                      name="punto_1"
+                      value={d?.punto_1 || ""}
+                    />
                   </div>
                   <div class="form-group">
                     <label>Punto 2</label>
-                    <input type="text" name="punto_2" value={d.punto_2} />
+                    <input
+                      type="text"
+                      name="punto_2"
+                      value={d?.punto_2 || ""}
+                    />
                   </div>
                   <div class="form-group">
                     <label>Punto 3</label>
-                    <input type="text" name="punto_3" value={d.punto_3} />
+                    <input
+                      type="text"
+                      name="punto_3"
+                      value={d?.punto_3 || ""}
+                    />
                   </div>
                   <div class="form-group">
                     <label>Punto 4</label>
-                    <input type="text" name="punto_4" value={d.punto_4} />
+                    <input
+                      type="text"
+                      name="punto_4"
+                      value={d?.punto_4 || ""}
+                    />
                   </div>
                 </div>
               </div>
 
-              <!-- BADGE SOBRE LA IMAGEN -->
               <div class="editor-card" style="margin-top: 24px;">
                 <h3>Card sobre la Imagen</h3>
                 <p
@@ -162,7 +183,7 @@ const d = datosReq[0];
                     <input
                       type="text"
                       name="badge_titulo"
-                      value={d.badge_titulo || "V & A"}
+                      value={d?.badge_titulo || "V & A"}
                       placeholder="V & A"
                     />
                   </div>
@@ -171,14 +192,13 @@ const d = datosReq[0];
                     <input
                       type="text"
                       name="badge_subtitulo"
-                      value={d.badge_subtitulo ||
+                      value={d?.badge_subtitulo ||
                         "Legado de Elegancia Atemporal"}
                       placeholder="Legado de Elegancia Atemporal"
                     />
                   </div>
                 </div>
 
-                <!-- Preview del badge -->
                 <div
                   style="margin-top: 16px; background: #1a1a2e; border-radius: 8px; padding: 20px; display: flex; align-items: flex-end; min-height: 120px; position: relative; overflow: hidden;"
                 >
@@ -189,13 +209,13 @@ const d = datosReq[0];
                       id="preview-badge-titulo"
                       style="font-family: 'Playfair Display', serif; font-size: 1.3rem; color: white; font-style: italic; letter-spacing: 2px; margin-bottom: 6px;"
                     >
-                      {d.badge_titulo || "V & A"}
+                      {d?.badge_titulo || "V & A"}
                     </div>
                     <div
                       id="preview-badge-sub"
                       style="font-size: 0.6rem; letter-spacing: 4px; text-transform: uppercase; color: rgba(255,255,255,0.5);"
                     >
-                      {d.badge_subtitulo || "Legado de Elegancia Atemporal"}
+                      {d?.badge_subtitulo || "Legado de Elegancia Atemporal"}
                     </div>
                   </div>
                   <span
@@ -207,18 +227,16 @@ const d = datosReq[0];
             </div>
 
             <div class="editor-sidebar">
-              <!-- IMAGEN -->
               <div class="editor-card">
                 <h3>Imagen Destacada</h3>
                 <div
                   id="img-preview"
-                  style={`width: 100%; height: 200px; background-image: url(${d.ruta_imagen || ""}); background-size: cover; background-position: center; border-radius: 8px; margin-bottom: 15px; background-color: #eee;`}
+                  style={`width: 100%; height: 200px; background-image: url(${d?.ruta_imagen || ""}); background-size: cover; background-position: center; border-radius: 8px; margin-bottom: 15px; background-color: #eee;`}
                 >
                 </div>
                 <input type="file" id="file-input" accept="image/*" />
               </div>
 
-              <!-- BOTÓN -->
               <div class="editor-card">
                 <h3>Acción del Botón</h3>
                 <div class="form-group">
@@ -226,7 +244,7 @@ const d = datosReq[0];
                   <input
                     type="text"
                     name="url_boton"
-                    value={d.url_boton}
+                    value={d?.url_boton || ""}
                     placeholder="https://wa.me/529931072419"
                   />
                   <small
