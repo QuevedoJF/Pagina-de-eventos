@@ -2,8 +2,11 @@
 import sql from "../lib/db.js";
 import "../styles/admin.css";
 
+// Evitamos que Vercel guarde en caché esta página
+export const prerender = false;
+
 let saveError = "";
-let saveOk = false;
+const showOk = Astro.url.searchParams.get("ok") === "1";
 
 if (Astro.request.method === "POST") {
   try {
@@ -16,34 +19,43 @@ if (Astro.request.method === "POST") {
     const p4 = String(data.get("punto_4") || "");
     const url = String(data.get("url_boton") || "");
     const img = String(data.get("imagen_base64") || "");
-    const badgeTitulo = String(data.get("badge_titulo") || "");
-    const badgeSub = String(data.get("badge_subtitulo") || "");
+    const badgeTitulo = String(data.get("badge_titulo") || "V & A");
+    const badgeSub = String(
+      data.get("badge_subtitulo") || "Legado de Elegancia Atemporal",
+    );
 
-    // Asegurar que las columnas existen antes de usarlas
-    await sql`
-      ALTER TABLE seccion_legado 
-      ADD COLUMN IF NOT EXISTS badge_titulo TEXT DEFAULT 'V & A'
-    `;
-    await sql`
-      ALTER TABLE seccion_legado 
-      ADD COLUMN IF NOT EXISTS badge_subtitulo TEXT DEFAULT 'Legado de Elegancia Atemporal'
-    `;
-
-    // Como ya confirmamos que el id = 1 existe, hacemos el UPDATE normal
-    await sql`
-      UPDATE seccion_legado 
-      SET titulo = ${titulo}, 
-          descripcion = ${desc}, 
-          punto_1 = ${p1}, 
-          punto_2 = ${p2}, 
-          punto_3 = ${p3}, 
-          punto_4 = ${p4}, 
-          url_boton = ${url},
-          badge_titulo = ${badgeTitulo},
-          badge_subtitulo = ${badgeSub},
-          ruta_imagen = ${img !== "" ? img : sql`ruta_imagen`}
-      WHERE id = 1
-    `;
+    if (img !== "") {
+      // Guarda con imagen nueva
+      await sql`
+        UPDATE seccion_legado 
+        SET titulo = ${titulo}, 
+            descripcion = ${desc}, 
+            punto_1 = ${p1}, 
+            punto_2 = ${p2}, 
+            punto_3 = ${p3}, 
+            punto_4 = ${p4}, 
+            url_boton = ${url}, 
+            badge_titulo = ${badgeTitulo}, 
+            badge_subtitulo = ${badgeSub}, 
+            ruta_imagen = ${img}
+        WHERE id = 1
+      `;
+    } else {
+      // Guarda dejando la imagen actual intacta
+      await sql`
+        UPDATE seccion_legado 
+        SET titulo = ${titulo}, 
+            descripcion = ${desc}, 
+            punto_1 = ${p1}, 
+            punto_2 = ${p2}, 
+            punto_3 = ${p3}, 
+            punto_4 = ${p4}, 
+            url_boton = ${url}, 
+            badge_titulo = ${badgeTitulo}, 
+            badge_subtitulo = ${badgeSub}
+        WHERE id = 1
+      `;
+    }
 
     return Astro.redirect("/admin-legado?ok=1");
   } catch (e: any) {
@@ -52,12 +64,14 @@ if (Astro.request.method === "POST") {
   }
 }
 
-const showOk = Astro.url.searchParams.get("ok") === "1";
-
-// 2. OBTENER DATOS ACTUALES
-const datosReq = await sql`SELECT * FROM seccion_legado WHERE id = 1`;
-// Red de seguridad: si no hay datos, d es un objeto vacío
-const d = datosReq[0] || {};
+// Obtenemos los datos para mostrarlos en el HTML
+let d: any = {};
+try {
+  const datosReq = await sql`SELECT * FROM seccion_legado WHERE id = 1`;
+  d = datosReq[0] || {};
+} catch (e) {
+  console.error("Error al cargar datos:", e);
+}
 ---
 
 <!doctype html>
