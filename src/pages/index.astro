@@ -96,11 +96,19 @@ function normalizarUrl(url: string): string {
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My love FEST</title>
+
+    <title>Decoración de Eventos y Bodas | {hero.logo || "Vino & Arena"}</title>
+
     <meta
       name="description"
-      content="Diseñamos entornos de lujo donde la estética impecable se encuentra con la emoción genuina."
+      content="Empresa especialista en decoración de eventos, bodas y fiestas. Diseñamos entornos de lujo donde la estética impecable se encuentra con la emoción genuina."
     />
+
+    <meta
+      name="keywords"
+      content="evento, eventos, decoración, decoración de eventos, diseño de eventos, bodas, fiestas, coordinación de eventos, mobiliario para eventos"
+    />
+
     <link rel="icon" type="image/png" href="/Logo.png" />
   </head>
   <body>
@@ -138,7 +146,10 @@ function normalizarUrl(url: string): string {
           <img src={hero.imagen_principal} alt="Evento de lujo" />
         </div>
         <div class="hero-img-accent">
-          <img src={hero.imagen_acento} alt="Detalles del evento" />
+          <img
+            src={hero.imagen_acento}
+            alt="Detalles de decoración del evento"
+          />
         </div>
         <span class="hero-counter">{hero.contador}</span>
       </div>
@@ -153,11 +164,10 @@ function normalizarUrl(url: string): string {
       <div class="container">
         <div class="firma-grid">
           <div class="firma-img-wrap reveal">
-            <!-- ✅ IMAGEN DINÁMICA DESDE BD -->
             <img
               src={iden.ruta_imagen ||
                 "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=2069"}
-              alt="Nuestra Firma"
+              alt="Nuestra Firma de Decoración"
             />
           </div>
           <div>
@@ -191,7 +201,8 @@ function normalizarUrl(url: string): string {
           </p>
           <h2 class="section-title">
             Experiencias <em style="font-style: italic; color: var(--wine);"
-              >Curadas</em>
+              >Curadas</em
+            >
           </h2>
           <p class="section-sub">
             Bodas de autor y eventos corporativos de alto nivel
@@ -203,7 +214,10 @@ function normalizarUrl(url: string): string {
             servicios.map((s: any, i: number) => (
               <div class={`card-service reveal reveal-delay-${i + 1}`}>
                 <span class="card-number">0{i + 1}</span>
-                <img src={s.ruta_imagen || "/placeholder.jpg"} alt={s.titulo} />
+                <img
+                  src={s.ruta_imagen || "/placeholder.jpg"}
+                  alt={`Servicio de decoración: ${s.titulo}`}
+                />
                 <div class="card-overlay">
                   <h3>{s.titulo}</h3>
                   <p>{s.descripcion.substring(0, 110)}...</p>
@@ -227,13 +241,15 @@ function normalizarUrl(url: string): string {
             <p class="section-label reveal">Visual Storytelling</p>
             <h2 class="section-title reveal reveal-delay-1">
               El Archivo <em style="font-style: italic; color: var(--wine);"
-                >Visual.</em>
+                >Visual.</em
+              >
             </h2>
             <p
               class="section-sub reveal reveal-delay-2"
               style="text-align: left; margin-top: 8px;"
             >
-              Una selección de nuestras instalaciones más emblemáticas
+              Una selección de nuestras instalaciones de eventos más
+              emblemáticas
             </p>
           </div>
           <a href="/proyectos" class="ver-todo reveal"
@@ -251,7 +267,7 @@ function normalizarUrl(url: string): string {
                 <div class="project-img-box">
                   <img
                     src={p.ruta_imagen || "/placeholder.jpg"}
-                    alt={p.titulo}
+                    alt={`Proyecto de evento: ${p.titulo}`}
                   />
                 </div>
                 <span class="project-cat">{p.cat || "DISEÑO"}</span>
@@ -277,7 +293,10 @@ function normalizarUrl(url: string): string {
       <div class="container">
         <div class="legado-grid">
           <div class="legado-img reveal">
-            <img src={legado.ruta_imagen} alt={legado.titulo} />
+            <img
+              src={legado.ruta_imagen}
+              alt={`Eventos de lujo: ${legado.titulo}`}
+            />
             <div class="legado-badge">
               <div class="legado-badge-title">
                 {legado.badge_titulo || "V & A"}
