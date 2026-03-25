@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Bloquear panel de administrador y login
+Disallow: /admin/
+Disallow: /login
+
+# Indicarle a Google dónde está el mapa del sitio
+Sitemap: https://pagina-de-eventos-one.vercel.app/sitemap.xml
