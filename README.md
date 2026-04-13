@@ -45,7 +45,9 @@ All commands are run from the root of the project, from a terminal:
 
 Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
 
-categorias base de datos
+categorias base de datos las imagenes van directo a https://console.cloudinary.com/app/c-825cad5024c17e592f6b44157c50d7/settings/upload/presets
+
+Estas son las categorias que actualmente existen en la base de datos:
 globo número
 Eventos premiun
 Letras gigantes
