@@ -39,7 +39,7 @@ if (Astro.request.method === "POST") {
 
     return Astro.redirect("/admin");
   } catch (error) {
-    console.error("Error en la base de datos:", error);
+    console.error(error);
   }
 }
 
@@ -51,7 +51,6 @@ const proyectos = await sql`
   ORDER BY p.creado_en DESC
 `;
 
-// ✅ Categorías dinámicas desde BD
 const categorias = await sql`SELECT * FROM categorias ORDER BY nombre ASC`;
 ---
 
@@ -141,7 +140,6 @@ const categorias = await sql`SELECT * FROM categorias ORDER BY nombre ASC`;
       </main>
     </div>
 
-    <!-- MODAL NUEVO PROYECTO -->
     <div id="modal-proyecto" class="modal-overlay">
       <div class="modal-content">
         <div class="modal-header">
@@ -164,7 +162,6 @@ const categorias = await sql`SELECT * FROM categorias ORDER BY nombre ASC`;
             />
           </div>
 
-          <!-- ✅ Categorías dinámicas -->
           <div class="form-group">
             <label>Categoría</label>
             <select name="categoria" required>
@@ -202,7 +199,9 @@ const categorias = await sql`SELECT * FROM categorias ORDER BY nombre ASC`;
           />
 
           <div class="form-actions">
-            <button type="submit" class="btn-save">Guardar Proyecto</button>
+            <button type="submit" class="btn-save" id="btn-save"
+              >Guardar Proyecto</button
+            >
           </div>
         </form>
       </div>
@@ -223,8 +222,12 @@ const categorias = await sql`SELECT * FROM categorias ORDER BY nombre ASC`;
       const hiddenImagesInput = document.getElementById(
         "imagenes_base64",
       ) as HTMLInputElement;
+      const btnSave = document.getElementById("btn-save") as HTMLButtonElement;
 
-      let selectedImages: string[] = [];
+      const CLOUD_NAME = "doreubyj4";
+      const UPLOAD_PRESET = "eventos_fotos";
+
+      let selectedImagesUrls: string[] = [];
 
       openBtn?.addEventListener("click", () => {
         modal.style.display = "flex";
@@ -233,27 +236,58 @@ const categorias = await sql`SELECT * FROM categorias ORDER BY nombre ASC`;
         modal.style.display = "none";
       });
 
-      imageInput?.addEventListener("change", (e: Event) => {
-        previewContainer.innerHTML = "";
-        selectedImages = [];
+      imageInput?.addEventListener("change", async (e: Event) => {
         const files = (e.target as HTMLInputElement).files;
-        if (!files) return;
+        if (!files || files.length === 0) return;
 
-        Array.from(files).forEach((file: File) => {
-          const reader = new FileReader();
-          reader.onload = (event: ProgressEvent<FileReader>) => {
-            const result = event.target?.result as string;
-            if (!result) return;
-            selectedImages.push(result);
-            hiddenImagesInput.value = JSON.stringify(selectedImages);
+        btnSave.disabled = true;
+        btnSave.innerText = "Subiendo fotos a la nube...";
+        btnSave.style.opacity = "0.7";
+
+        previewContainer.innerHTML = "";
+        selectedImagesUrls = [];
+
+        try {
+          for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+
+            const tempUrl = URL.createObjectURL(file);
             const div = document.createElement("div");
             div.className = "preview-item";
-            div.style.backgroundImage = `url(${result})`;
+            div.style.backgroundImage = `url(${tempUrl})`;
             div.style.backgroundSize = "cover";
             previewContainer.appendChild(div);
-          };
-          reader.readAsDataURL(file);
-        });
+
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("upload_preset", UPLOAD_PRESET);
+
+            const res = await fetch(
+              `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+              {
+                method: "POST",
+                body: formData,
+              },
+            );
+
+            const data = await res.json();
+            selectedImagesUrls.push(data.secure_url);
+          }
+
+          hiddenImagesInput.value = JSON.stringify(selectedImagesUrls);
+
+          btnSave.innerText = "Guardar Proyecto";
+          btnSave.disabled = false;
+          btnSave.style.opacity = "1";
+        } catch (err) {
+          console.error(err);
+          btnSave.innerText = "Error. Intenta subir de nuevo.";
+          setTimeout(() => {
+            btnSave.innerText = "Guardar Proyecto";
+            btnSave.disabled = false;
+            btnSave.style.opacity = "1";
+          }, 3000);
+        }
       });
     </script>
   </body>

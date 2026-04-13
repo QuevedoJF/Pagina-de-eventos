@@ -4,7 +4,6 @@ import "../styles/admin.css";
 
 let saveError = "";
 
-// Asegurar tabla y fila
 await sql`
   CREATE TABLE IF NOT EXISTS seccion_hero (
     id SERIAL PRIMARY KEY,
@@ -21,7 +20,6 @@ await sql`
 `;
 await sql`INSERT INTO seccion_hero (id) VALUES (1) ON CONFLICT (id) DO NOTHING`;
 
-// Asegurar columnas nuevas existen
 await sql`ALTER TABLE seccion_hero ADD COLUMN IF NOT EXISTS logo TEXT DEFAULT 'Vino & Arena'`;
 await sql`ALTER TABLE seccion_hero ADD COLUMN IF NOT EXISTS titulo_normal TEXT DEFAULT 'Creando'`;
 await sql`ALTER TABLE seccion_hero ADD COLUMN IF NOT EXISTS titulo_italico TEXT DEFAULT 'Atmósferas'`;
@@ -122,11 +120,9 @@ const showOk = Astro.url.searchParams.get("ok") === "1";
           <input type="hidden" name="img_acento_base64" id="field-img-acento" />
 
           <div class="editor-layout" style="grid-template-columns: 1fr 360px;">
-            <!-- ── IZQUIERDA: TEXTOS ─────────────── -->
             <div class="editor-main">
               <div class="editor-card">
                 <h3>Textos</h3>
-
                 <div class="form-group">
                   <label>Logo / Nombre de la Marca</label>
                   <input
@@ -139,7 +135,6 @@ const showOk = Astro.url.searchParams.get("ok") === "1";
                     >Aparece en la esquina superior izquierda del menú.</small
                   >
                 </div>
-
                 <div class="form-group">
                   <label>Etiqueta dorada (texto pequeño superior)</label>
                   <input
@@ -149,7 +144,6 @@ const showOk = Astro.url.searchParams.get("ok") === "1";
                     placeholder="Curaduría de Atmósferas"
                   />
                 </div>
-
                 <div class="form-group">
                   <label>Título — Parte 1 (texto normal)</label>
                   <input
@@ -177,14 +171,12 @@ const showOk = Astro.url.searchParams.get("ok") === "1";
                     placeholder="que Inspiran el Alma."
                   />
                 </div>
-
                 <div class="form-group">
                   <label>Descripción</label>
                   <textarea name="descripcion" rows="3"
                     >{d.descripcion}</textarea
                   >
                 </div>
-
                 <div class="form-group">
                   <label>Texto lateral (contador / años)</label>
                   <input
@@ -193,13 +185,12 @@ const showOk = Astro.url.searchParams.get("ok") === "1";
                     value={d.contador}
                     placeholder="2019 — Présente"
                   />
-                  <small style="color: #aaa; font-size: 0.75rem;">
-                    Aparece girado verticalmente a la derecha de las imágenes.
-                  </small>
+                  <small style="color: #aaa; font-size: 0.75rem;"
+                    >Aparece girado verticalmente a la derecha de las imágenes.</small
+                  >
                 </div>
               </div>
 
-              <!-- Preview del título -->
               <div class="editor-card" style="margin-top: 24px;">
                 <h3>Vista previa del título</h3>
                 <div
@@ -230,9 +221,7 @@ const showOk = Astro.url.searchParams.get("ok") === "1";
               </div>
             </div>
 
-            <!-- ── DERECHA: IMÁGENES ─────────────── -->
             <div class="editor-sidebar">
-              <!-- Imagen principal -->
               <div class="editor-card">
                 <h3>Imagen Principal</h3>
                 <p
@@ -253,7 +242,6 @@ const showOk = Astro.url.searchParams.get("ok") === "1";
                 />
               </div>
 
-              <!-- Imagen acento -->
               <div class="editor-card" style="margin-top: 20px;">
                 <h3>Imagen Acento</h3>
                 <p
@@ -274,9 +262,13 @@ const showOk = Astro.url.searchParams.get("ok") === "1";
                 />
               </div>
 
-              <!-- Guardar -->
               <div class="editor-card" style="margin-top: 20px;">
-                <button type="submit" class="btn-publish" style="width: 100%;">
+                <button
+                  type="submit"
+                  id="btn-submit"
+                  class="btn-publish"
+                  style="width: 100%; transition: 0.3s;"
+                >
                   GUARDAR CAMBIOS
                 </button>
               </div>
@@ -287,7 +279,65 @@ const showOk = Astro.url.searchParams.get("ok") === "1";
     </div>
 
     <script>
-      // Live preview textos
+      const btnSubmit = document.getElementById(
+        "btn-submit",
+      ) as HTMLButtonElement;
+      const CLOUD_NAME = "doreubyj4";
+      const UPLOAD_PRESET = "eventos_fotos";
+
+      function setupUpload(
+        inputId: string,
+        previewId: string,
+        hiddenId: string,
+      ) {
+        const input = document.getElementById(inputId) as HTMLInputElement;
+        const preview = document.getElementById(previewId) as HTMLElement;
+        const hidden = document.getElementById(hiddenId) as HTMLInputElement;
+
+        input?.addEventListener("change", async (e) => {
+          const file = input.files?.[0];
+          if (!file) return;
+
+          const tempUrl = URL.createObjectURL(file);
+          preview.style.backgroundImage = `url(${tempUrl})`;
+
+          btnSubmit.disabled = true;
+          btnSubmit.innerText = "Subiendo foto...";
+          btnSubmit.style.opacity = "0.7";
+
+          const formData = new FormData();
+          formData.append("file", file);
+          formData.append("upload_preset", UPLOAD_PRESET);
+
+          try {
+            const res = await fetch(
+              `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+              {
+                method: "POST",
+                body: formData,
+              },
+            );
+            const data = await res.json();
+            hidden.value = data.secure_url;
+
+            btnSubmit.innerText = "GUARDAR CAMBIOS";
+            btnSubmit.disabled = false;
+            btnSubmit.style.opacity = "1";
+          } catch (err) {
+            console.error(err);
+            btnSubmit.innerText = "Error. Intenta de nuevo.";
+            setTimeout(() => {
+              btnSubmit.innerText = "GUARDAR CAMBIOS";
+              btnSubmit.disabled = false;
+              btnSubmit.style.opacity = "1";
+            }, 3000);
+          }
+        });
+      }
+
+      setupUpload("file-principal", "preview-principal", "field-img-principal");
+      setupUpload("file-acento", "preview-acento", "field-img-acento");
+
       const eyebrowInput = document.querySelector<HTMLInputElement>(
         'input[name="eyebrow"]',
       );
@@ -330,32 +380,6 @@ const showOk = Astro.url.searchParams.get("ok") === "1";
       document
         .querySelector('input[name="titulo_normal2"]')
         ?.addEventListener("input", updateTitlePreview);
-
-      // Upload imagen principal
-      function setupUpload(
-        inputId: string,
-        previewId: string,
-        hiddenId: string,
-      ) {
-        const input = document.getElementById(inputId) as HTMLInputElement;
-        const preview = document.getElementById(previewId) as HTMLElement;
-        const hidden = document.getElementById(hiddenId) as HTMLInputElement;
-
-        input?.addEventListener("change", () => {
-          const file = input.files?.[0];
-          if (!file) return;
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            const base64 = e.target?.result as string;
-            hidden.value = base64;
-            preview.style.backgroundImage = `url(${base64})`;
-          };
-          reader.readAsDataURL(file);
-        });
-      }
-
-      setupUpload("file-principal", "preview-principal", "field-img-principal");
-      setupUpload("file-acento", "preview-acento", "field-img-acento");
     </script>
   </body>
 </html>

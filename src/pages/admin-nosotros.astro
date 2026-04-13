@@ -13,7 +13,6 @@ if (Astro.request.method === "POST") {
     const fechaAhora = new Date();
     const usuarioActivo = "Administrador";
 
-    // Asegurar columna imagen existe
     await sql`ALTER TABLE identidad_marca ADD COLUMN IF NOT EXISTS ruta_imagen TEXT DEFAULT 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=2069'`;
 
     const check = await sql`SELECT id FROM identidad_marca LIMIT 1`;
@@ -35,7 +34,7 @@ if (Astro.request.method === "POST") {
     }
     return Astro.redirect("/admin-nosotros?ok=1");
   } catch (error) {
-    console.error("Error al guardar:", error);
+    console.error(error);
   }
 }
 
@@ -138,12 +137,11 @@ const showOk = Astro.url.searchParams.get("ok") === "1";
                   class="btn-discard"
                   onclick="window.location.reload();">DESCARTAR</button
                 >
-                <button type="submit" class="btn-publish"
+                <button type="submit" id="btn-submit" class="btn-publish"
                   >PUBLICAR CAMBIOS</button
                 >
               </div>
 
-              <!-- IMAGEN DE LA FIRMA -->
               <div class="editor-card" style="margin-top: 20px;">
                 <h3>Imagen de La Firma</h3>
                 <p
@@ -188,17 +186,51 @@ const showOk = Astro.url.searchParams.get("ok") === "1";
         "field-img-base64",
       ) as HTMLInputElement;
       const preview = document.getElementById("img-preview") as HTMLElement;
+      const btnSubmit = document.getElementById(
+        "btn-submit",
+      ) as HTMLButtonElement;
 
-      imgInput?.addEventListener("change", () => {
+      const CLOUD_NAME = "doreubyj4";
+      const UPLOAD_PRESET = "eventos_fotos";
+
+      imgInput?.addEventListener("change", async () => {
         const file = imgInput.files?.[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const base64 = e.target?.result as string;
-          hiddenImg.value = base64;
-          preview.style.backgroundImage = `url(${base64})`;
-        };
-        reader.readAsDataURL(file);
+
+        const tempUrl = URL.createObjectURL(file);
+        preview.style.backgroundImage = `url(${tempUrl})`;
+
+        btnSubmit.disabled = true;
+        btnSubmit.innerText = "Subiendo imagen...";
+        btnSubmit.style.opacity = "0.7";
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", UPLOAD_PRESET);
+
+        try {
+          const res = await fetch(
+            `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+            {
+              method: "POST",
+              body: formData,
+            },
+          );
+          const data = await res.json();
+          hiddenImg.value = data.secure_url;
+
+          btnSubmit.innerText = "PUBLICAR CAMBIOS";
+          btnSubmit.disabled = false;
+          btnSubmit.style.opacity = "1";
+        } catch (err) {
+          console.error(err);
+          btnSubmit.innerText = "Error. Intenta de nuevo.";
+          setTimeout(() => {
+            btnSubmit.innerText = "PUBLICAR CAMBIOS";
+            btnSubmit.disabled = false;
+            btnSubmit.style.opacity = "1";
+          }, 3000);
+        }
       });
     </script>
   </body>

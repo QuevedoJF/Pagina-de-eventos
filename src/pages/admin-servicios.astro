@@ -18,7 +18,6 @@ if (Astro.request.method === "POST") {
     const descripcion = String(data.get("descripcion") || "");
     const precio = Number(data.get("precio") || 0);
     const estado = String(data.get("estado") || "Activo");
-
     const imagen = String(data.get("ruta_imagen") || "");
 
     if (action === "save") {
